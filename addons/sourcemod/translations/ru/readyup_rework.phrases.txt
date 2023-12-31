@@ -1,0 +1,94 @@
+"Phrases"
+{
+	"TAG"
+	{
+		"ru"			"<{green}ReadyUp{default}> "
+	}
+
+	"AUTOSTART_WAIT_LOADING_PLAYERS"
+	{
+		"ru"			"Подождите загрузку игроков"
+	}
+
+	"AUTOSTART_COUNTDOWN_END"
+	{
+		"ru"			"Теперь можете начинать"
+	}
+
+	"AUTOSTART_COUNTDOWN"
+	{
+		"#format"		"{1:d}"
+		"ru"			"Ожидайте {1} сек."
+	}
+
+	"START_COUNTDOWN_END"
+	{
+		"ru"			"Теперь можете начинать"
+	}
+
+	"START_COUNTDOWN"
+	{
+		"#format"		"{1:d}"
+		"ru"			"Ожидайте {1} сек."
+	}
+
+	"STOP_COUNTDOWN_PLAYER_DISCONNECT"
+	{
+		"#format"		"{1:N}"
+		"ru"			"Отсчёт прерван: {olive}{1}{default} отключился"
+	}
+
+	"STOP_COUNTDOWN_PLAYER_CHANGE_TEAM"
+	{
+		"#format"		"{1:N}"
+		"ru"			"Отсчёт прерван: {olive}{1}{default} сменил команду"
+	}
+
+	"STOP_COUNTDOWN_PLAYER_UNREADY"
+	{
+		"#format"		"{1:N}"
+		"ru"			"Отсчёт прерван: {olive}{1}{default} не готов"
+	}
+
+	"PANEL_BLOCK_TEAM"
+	{
+		"#format"		"{1:d},{2:s},{3:d},{4:d}"
+		"ru"			"->{1}. {2} [{3}/{4}]"
+	}
+
+	"PANEL_SURVIVOR_TEAM"
+	{
+		"ru"			"Survivor"
+	}
+
+	"PANEL_INFECTED_TEAM"
+	{
+		"ru"			"Infected"
+	}
+
+	"PANEL_CASTER_TEAM"
+	{
+		"ru"			"Caster"
+	}
+
+	"PANEL_PLAYER_READY"
+	{
+		"ru"			"■"
+	}
+
+	"PANEL_PLAYER_UNREADY"
+	{
+		"ru"			"□"
+	}
+
+	"PANEL_BLOCK_AFK"
+	{
+		"ru"			"[AFK] "
+	}
+
+	"PANEL_BLOCK_ITEM"
+	{
+		"#format"		"{1:s},{2:s},{3:N}"
+		"ru"			"{1} {2}{3}"
+	}
+}
