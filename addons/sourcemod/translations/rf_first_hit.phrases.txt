@@ -1,0 +1,38 @@
+"Phrases"
+{
+    "SMOKER"
+    {
+        "en"			"Smoker"
+    }
+
+    "BOOMER"
+    {
+        "en"			"(Boomer)"
+    }
+
+    "HUNTER"
+    {
+        "en"			"Hunter"
+    }
+
+    "SPITTER"
+    {
+        "en"			"(Spitter)"
+    }
+
+    "JOCKEY"
+    {
+        "en"			"Jockey"
+    }
+
+    "CHARGER"
+    {
+        "en"			"Charger"
+    }
+
+    "FIRST_HIT"
+    {
+        "#format"		"{1:s}"
+        "en"			"SI: {1}"
+    }
+}

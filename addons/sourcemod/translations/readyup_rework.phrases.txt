@@ -1,0 +1,118 @@
+"Phrases"
+{
+    "TAG"
+    {
+        "en"            "<{green}ReadyUp{default}> "
+    }
+
+    "PANEL_COUNTDOWN"
+    {
+        "#format"       "{1:d}"
+        "en"            "Countdown: {1} sec"
+    }
+
+    "STOP_COUNTDOWN_PLAYER_DISCONNECT"
+    {
+        "#format"       "{1:s}"
+        "en"            "Countdown interrupted: {olive}{1}{default} disconnected"
+    }
+
+    "STOP_COUNTDOWN_PLAYER_CHANGE_TEAM"
+    {
+        "#format"       "{1:s}"
+        "en"            "Countdown interrupted: {olive}{1}{default} changed team"
+    }
+
+    "STOP_COUNTDOWN_PLAYER_UNREADY"
+    {
+        "#format"       "{1:s}"
+        "en"            "Countdown interrupted: {olive}{1}{default} not ready"
+    }
+
+    "PANEL_DISABLED"
+    {
+        "en"            "The panel is {olive}hidden"
+    }
+
+    "PANEL_ENABLED"
+    {
+        "en"            "The panel is {olive}shown"
+    }
+
+    "PANEL_BLOCK_TEAM"
+    {
+        "#format"       "{1:d},{2:s}"
+        "en"            "->{1}. {2}"
+    }
+
+    "PANEL_SURVIVOR_TEAM"
+    {
+        "en"            "Survivors"
+    }
+
+    "PANEL_INFECTED_TEAM"
+    {
+        "en"            "Infected"
+    }
+
+    "PANEL_CASTER_TEAM"
+    {
+        "en"            "Caster"
+    }
+
+    "PANEL_MARK_READY"
+    {
+        "en"            "▣"
+    }
+
+    "PANEL_MARK_UNREADY"
+    {
+        "en"            "▢"
+    }
+
+    "PANEL_MARK_AFK"
+    {
+        "en"            "[AFK] "
+    }
+
+    "PANEL_BLOCK_ITEM"
+    {
+        "#format"       "{1:s},{2:s},{3:s}"
+        "en"            "{1} {2}{3}"
+    }
+
+    "PANEL_CONNECTING_DELAY"
+    {
+        "#format"       "{1:d}"
+        "en"            "Loading {1} players..."
+    }
+
+    "PANEL_AUTOSTART_TIMER"
+    {
+        "#format"       "{1:d}"
+        "en"            "Game starts in {1} sec"
+    }
+
+    "PANEL_ALREADY_READY"
+    {
+        "en"            "The round will start when\nthe survivors leave the safe zone"
+    }
+
+    "STOP_SPAM_COMMAND"
+    {
+        "#format"       "{1:.1f}"
+        "en"            "Stop spamming ready status {1} sec"
+    }
+
+    "STOP_SPAM_COMMAND_WITH_INC"
+    {
+        "#format"       "{1:.1f},{2:.1f}"
+        "en"            "Stop spamming ready status {1} ({red}+{2}{default}) sec"
+    }
+
+    "FORCE_START_BY_ADMIN"
+    {
+        "#format"       "{1:s}"
+        "en"            "Game start is {green}forced{default} by {olive}{1}"
+    }
+}
