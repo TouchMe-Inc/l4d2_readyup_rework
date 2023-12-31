@@ -83,7 +83,7 @@ forward void OnChangeClientReady(int iClient, bool bReady);
 /**
  *
  */
-forward void OnPreparePanelItem(PanelPos ePos, int iClient, int iIndex);
+forward Action OnPreparePanelItem(PanelPos ePos, int iClient, int iIndex);
 
 /**
  *
