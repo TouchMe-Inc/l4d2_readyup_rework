@@ -387,7 +387,7 @@ public void OnPluginStart()
 
 	g_cvMode = CreateConVar("sm_readyup_mode", "2", "Enable this plugin. (Values: 0 = Disabled, 1 = Auto start, 2 = Player ready, 3 = Team ready)", _, true, 0.0, true, 3.0);
 	g_cvDelay = CreateConVar("sm_readyup_delay", "3", "Number of seconds to count down before the round goes live", _, true, 0.0);
-	g_cvAutoStartDelay = CreateConVar("sm_readyup_autostart_delay", "20", "Number of seconds to wait for connecting players before auto-start is forced", _, true, 0.0);
+	g_cvAutoStartDelay = CreateConVar("sm_readyup_autostart_delay", "20.0", "Number of seconds to wait for connecting players before auto-start is forced", _, true, 0.0);
 	g_cvAfkDuration = CreateConVar("sm_readyup_afk_duration", "15.0", "Number of seconds to count down before the round goes live", _, true, 1.0);
 	g_cvSoundEnable = CreateConVar("sm_readyup_sound_enable", "1", "Enable sounds played to clients", _, true, 0.0, true, 1.0);
 	g_cvSoundNotify = CreateConVar("sm_readyup_sound_notify", DEFAULT_NOTIFY_SOUND, "The sound that plays when a round goes on countdown");
@@ -967,7 +967,10 @@ Panel BuildPanel(int iClient)
 
 		for (int iIndex = 0; iIndex < iHeaderSize; iIndex ++)
 		{
-			ExecuteForward_OnPreparePanelItem(PanelPos_Header, iClient, iIndex);
+			if (ExecuteForward_OnPreparePanelItem(PanelPos_Header, iClient, iIndex) != Plugin_Continue) {
+				continue;
+			}
+
 			GetArrayString(g_hPanelHeader, iIndex, sHeader, sizeof(sHeader));
 			DrawPanelText(hPanel, sHeader);
 		}
@@ -1078,7 +1081,10 @@ Panel BuildPanel(int iClient)
 
 		for (int iIndex = 0; iIndex < iFooterSize; iIndex ++)
 		{
-			ExecuteForward_OnPreparePanelItem(PanelPos_Footer, iClient, iIndex);
+			if (ExecuteForward_OnPreparePanelItem(PanelPos_Footer, iClient, iIndex) != Plugin_Continue) {
+				continue;
+			}
+
 			GetArrayString(g_hPanelFooter, iIndex, sFooter, sizeof(sFooter));
 			DrawPanelText(hPanel, sFooter);
 		}
@@ -1290,16 +1296,20 @@ void ExecuteForward_OnChangeClientReady(int iClient, bool bReady)
 /**
  *
  */
-void ExecuteForward_OnPreparePanelItem(PanelPos ePos, int iClient, int iIndex)
+Action ExecuteForward_OnPreparePanelItem(PanelPos ePos, int iClient, int iIndex)
 {
+	Action aReturn = Plugin_Continue;
+
 	if (GetForwardFunctionCount(g_fwdOnPreparePanelItem))
 	{
 		Call_StartForward(g_fwdOnPreparePanelItem);
 		Call_PushCell(ePos);
 		Call_PushCell(iClient);
 		Call_PushCell(iIndex);
-		Call_Finish();
+		Call_Finish(aReturn);
 	}
+
+	return aReturn;
 }
 
 /**
