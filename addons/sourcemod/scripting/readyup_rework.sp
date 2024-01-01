@@ -18,7 +18,7 @@ public Plugin myinfo =
 	name = "ReadyUpRework",
 	author = "CanadaRox, TouchMe",
 	description = "The plugin allows you to control the moment the round starts",
-	version = "build0000",
+	version = "build0001",
 	url = "https://github.com/TouchMe-Inc/l4d2_readyup_rework"
 };
 
@@ -974,6 +974,8 @@ Panel BuildPanel(int iClient)
 			GetArrayString(g_hPanelHeader, iIndex, sHeader, sizeof(sHeader));
 			DrawPanelText(hPanel, sHeader);
 		}
+
+		DrawPanelSpace(hPanel);
 	}
 
 	int iPlayers[4][MAXPLAYERS + 1];
@@ -1005,7 +1007,6 @@ Panel BuildPanel(int iClient)
 
 	for (int iTeam = TEAM_SURVIVOR; iTeam <= TEAM_INFECTED; iTeam ++)
 	{
-		DrawPanelSpace(hPanel);
 		FormatEx(sBlockName, sizeof(sBlockName), "%T", PANEL_BLOCK_NAME[iBlock], iClient);
 
 		DrawPanelFormatText(hPanel, "%T", "PANEL_BLOCK_TEAM", iClient, iBlock + 1, sBlockName, iTotalPlayers[iTeam], iFullTeam[iTeam]);
@@ -1025,6 +1026,10 @@ Panel BuildPanel(int iClient)
 				sPlayerAfk,
 				sPlayerName
 			);
+		}
+
+		if (!iBlock) {
+			DrawPanelSpace(hPanel);
 		}
 
 		iBlock ++;
@@ -1077,6 +1082,8 @@ Panel BuildPanel(int iClient)
 
 	if (iFooterSize > 0)
 	{
+		DrawPanelSpace(hPanel);
+
 		char sFooter[64];
 
 		for (int iIndex = 0; iIndex < iFooterSize; iIndex ++)
