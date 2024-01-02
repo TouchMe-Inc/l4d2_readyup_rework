@@ -36,10 +36,9 @@ public Plugin myinfo =
 /**
  *
  */
-#define DEFAULT_NOTIFY_SOUND    "iButtons/button14.wav"
+#define DEFAULT_NOTIFY_SOUND    "buttons/button14.wav"
 #define DEFAULT_COUNTDOWN_SOUND "weapons/hegrenade/beep.wav"
 #define DEFAULT_LIVE_SOUND      "ui/survival_medal.wav"
-#define DEFAULT_AUTOSTART_SOUND "ui/buttonrollover.wav"
 
 /**
  *
@@ -657,7 +656,7 @@ Action Event_PlayerTeam(Event event, const char[] name, bool dontBroadcast)
 		hPack.WriteCell(iClient);
 		hPack.WriteCell(iOldTeam);
 
-		CreateTimer(0.1, Timer_PlayerTeam, hPack, TIMER_DATA_HNDL_CLOSE|TIMER_FLAG_NO_MAPCHANGE);
+		CreateTimer(0.1, Timer_PlayerTeam, hPack, TIMER_DATA_HNDL_CLOSE | TIMER_FLAG_NO_MAPCHANGE);
 	}
 
 	return Plugin_Continue;
@@ -1357,10 +1356,10 @@ void PlayCountdownSound()
 /**
  *
  */
-void PlayNotifySound(int client)
+void PlayNotifySound(int iClient)
 {
 	if (IsSoundEnabled()) {
-		EmitSoundToClient(client, g_sNotifySound);
+		EmitSoundToClient(iClient, g_sNotifySound);
 	}
 }
 
