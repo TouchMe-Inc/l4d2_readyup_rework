@@ -667,6 +667,10 @@ Action Event_PlayerTeam(Event event, const char[] name, bool dontBroadcast)
  */
 Action Timer_PlayerTeam(Handle hTimer, DataPack hPack)
 {
+	if (!IsReadyStateCountdown()) {
+		return Plugin_Stop;
+	}
+
 	hPack.Reset();
 
 	int iClient = hPack.ReadCell();
