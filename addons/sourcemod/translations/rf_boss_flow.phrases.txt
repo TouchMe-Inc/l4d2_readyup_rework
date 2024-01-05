@@ -1,0 +1,24 @@
+"Phrases"
+{
+	"STATIC"
+	{
+		"en"			"static"
+	}
+
+	"DISABLE"
+	{
+		"en"			"disable"
+	}
+
+	"TANK_FLOW"
+	{
+		"#format"		"{1:s}"
+		"en"			"Tank: {1}"
+	}
+
+	"WITCH_FLOW"
+	{
+		"#format"		"{1:s}"
+		"en"			"Witch: {1}"
+	}
+}
