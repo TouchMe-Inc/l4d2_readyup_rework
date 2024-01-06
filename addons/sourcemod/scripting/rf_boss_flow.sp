@@ -9,7 +9,7 @@
 
 public Plugin myinfo =
 {
-	name = "ReadyUpFooterBossFlow",
+	name = "ReadyupFooterBossFlow",
 	author = "TouchMe",
 	description = "N/a",
 	version = "build0000",
@@ -22,7 +22,7 @@ public Plugin myinfo =
 
 #define TRANSLATIONS            "rf_boss_flow.phrases"
 
-int iThisIndex = -1;
+int g_iThisIndex = -1;
 
 bool g_bReadyUpAvailable = false;
 
@@ -34,7 +34,7 @@ public void OnAllPluginsLoaded()
 	g_bReadyUpAvailable = LibraryExists(LIB_READY);
 
 	if (g_bReadyUpAvailable) {
-		iThisIndex = PushPanelItem(PanelPos_Footer, "OnPreparePanelItem");
+		g_iThisIndex = PushPanelItem(PanelPos_Footer, "OnPreparePanelItem");
 	}
 }
 
@@ -90,8 +90,8 @@ public void OnPluginStart()
 
 public Action OnPreparePanelItem(PanelPos ePos, int iClient, int iIndex)
 {
-	if (!g_bReadyUpAvailable || ePos != PanelPos_Footer || iThisIndex != iIndex) {
-		return Plugin_Handled;
+	if (!g_bReadyUpAvailable || ePos != PanelPos_Footer || g_iThisIndex != iIndex) {
+		return Plugin_Continue;
 	}
 
 	char sInfo[64];
@@ -140,5 +140,5 @@ public Action OnPreparePanelItem(PanelPos ePos, int iClient, int iIndex)
 
 	UpdatePanelItem(ePos, iIndex, sInfo);
 
-	return Plugin_Continue;
+	return Plugin_Stop;
 }

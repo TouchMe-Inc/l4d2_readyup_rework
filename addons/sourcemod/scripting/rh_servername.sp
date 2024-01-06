@@ -9,9 +9,9 @@
 
 public Plugin myinfo =
 {
-	name = "ReadyUpHeaderServerName",
+	name = "ReadyupHeaderServername",
 	author = "TouchMe",
-	description = "...",
+	description = "N/a",
 	version = "build0000",
 	url = "https://github.com/TouchMe-Inc/l4d2_readyup_rework"
 };
@@ -22,21 +22,18 @@ ConVar
 	g_cvServerNamer
 ;
 
-int iThisIndex = -1;
+int g_iThisIndex = -1;
 
 /**
   * Global event. Called when all plugins loaded.
   */
 public void OnAllPluginsLoaded() {
-	iThisIndex = PushPanelItem(PanelPos_Header, "OnPreparePanelItem");
+	g_iThisIndex = PushPanelItem(PanelPos_Header, "OnPreparePanelItem");
 }
 
 public void OnPluginStart()
 {
-	// LoadTranslations(TRANSLATION);
-
-	// basic
-	g_cvServerNameCvar	= CreateConVar("sm_rh_servername_cvar", "", "default: hostname");
+	g_cvServerNameCvar	= CreateConVar("sm_rh_servername_cvar", "", "blank = hostname");
 
 	g_cvServerNamer = FindServerNameConVar();
 
@@ -48,14 +45,14 @@ public void OnPluginStart()
  */
 public Action OnPreparePanelItem(PanelPos ePos, int iClient, int iIndex)
 {
-	if (ePos != PanelPos_Header || iThisIndex != iIndex) {
-		return Plugin_Handled;
+	if (ePos != PanelPos_Header || g_iThisIndex != iIndex) {
+		return Plugin_Continue;
 	}
 
 	char buffer[64]; GetConVarString(g_cvServerNamer, buffer, sizeof(buffer));
-	UpdatePanelItem(ePos, iIndex, "%s", buffer);
+	UpdatePanelItem(ePos, iIndex, buffer);
 
-	return Plugin_Continue;
+	return Plugin_Stop;
 }
 
 /**

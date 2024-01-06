@@ -15,7 +15,7 @@
 
 public Plugin myinfo =
 {
-	name = "ReadyUpRework",
+	name = "ReadyupRework",
 	author = "CanadaRox, TouchMe",
 	description = "The plugin allows you to control the moment the round starts",
 	version = "build0001",
@@ -609,16 +609,17 @@ Action Event_PlayerTeam(Event event, const char[] name, bool dontBroadcast)
 		return Plugin_Continue;
 	}
 
-	int iClient = GetClientOfUserId(event.GetInt("userid"));
+	int iClient = GetClientOfUserId(GetEventInt(event, "userid"));
 
-	if (!iClient || IsFakeClient(iClient))
+	if (!iClient || IsFakeClient(iClient)) {
 		return Plugin_Continue;
+	}
 
-	int iTeam = event.GetInt("team");
-	int iOldTeam = event.GetInt("oldteam");
+	int iTeam = GetEventInt(event, "team");
+	int iOldTeam = GetEventInt(event, "oldteam");
 
 	/*
-	 * Player disconnect
+	 * Player disconnect.
 	 */
 	if (iTeam == TEAM_NONE && iOldTeam != TEAM_SPECTATOR)
 	{
@@ -965,7 +966,7 @@ Panel BuildPanel(int iClient)
 
 		for (int iIndex = 0; iIndex < iHeaderSize; iIndex ++)
 		{
-			if (ExecuteForward_OnPreparePanelItem(PanelPos_Header, iClient, iIndex) != Plugin_Continue) {
+			if (ExecuteForward_OnPreparePanelItem(PanelPos_Header, iClient, iIndex) == Plugin_Continue) {
 				continue;
 			}
 
@@ -1086,7 +1087,7 @@ Panel BuildPanel(int iClient)
 
 		for (int iIndex = 0; iIndex < iFooterSize; iIndex ++)
 		{
-			if (ExecuteForward_OnPreparePanelItem(PanelPos_Footer, iClient, iIndex) != Plugin_Continue) {
+			if (ExecuteForward_OnPreparePanelItem(PanelPos_Footer, iClient, iIndex) == Plugin_Continue) {
 				continue;
 			}
 
