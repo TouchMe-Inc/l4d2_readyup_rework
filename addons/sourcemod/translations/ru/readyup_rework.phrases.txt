@@ -1,94 +1,118 @@
 "Phrases"
 {
-	"TAG"
-	{
-		"ru"			"<{green}ReadyUp{default}> "
-	}
+    "TAG"
+    {
+        "ru"             "<{green}ReadyUp{default}> "
+    }
 
-	"AUTOSTART_WAIT_LOADING_PLAYERS"
-	{
-		"ru"			"Подождите загрузку игроков"
-	}
+    "PANEL_COUNTDOWN"
+    {
+        "#format"        "{1:d}"
+        "ru"             "Обратный отсчёт: {1} сек."
+    }
 
-	"AUTOSTART_COUNTDOWN_END"
-	{
-		"ru"			"Теперь можете начинать"
-	}
+    "STOP_COUNTDOWN_PLAYER_DISCONNECT"
+    {
+        "#format"        "{1:s}"
+        "ru"             "Отсчёт прерван: {olive}{1}{default} отключился"
+    }
 
-	"AUTOSTART_COUNTDOWN"
-	{
-		"#format"		"{1:d}"
-		"ru"			"Ожидайте {1} сек."
-	}
+    "STOP_COUNTDOWN_PLAYER_CHANGE_TEAM"
+    {
+        "#format"        "{1:s}"
+        "ru"             "Отсчёт прерван: {olive}{1}{default} сменил команду"
+    }
 
-	"START_COUNTDOWN_END"
-	{
-		"ru"			"Теперь можете начинать"
-	}
+    "STOP_COUNTDOWN_PLAYER_UNREADY"
+    {
+        "#format"        "{1:s}"
+        "ru"             "Отсчёт прерван: {olive}{1}{default} не готов"
+    }
 
-	"START_COUNTDOWN"
-	{
-		"#format"		"{1:d}"
-		"ru"			"Ожидайте {1} сек."
-	}
+    "PANEL_DISABLED"
+    {
+        "ru"            "Панель {olive}скрыта"
+    }
 
-	"STOP_COUNTDOWN_PLAYER_DISCONNECT"
-	{
-		"#format"		"{1:N}"
-		"ru"			"Отсчёт прерван: {olive}{1}{default} отключился"
-	}
+    "PANEL_ENABLED"
+    {
+        "ru"            "Панель {olive}отображается"
+    }
 
-	"STOP_COUNTDOWN_PLAYER_CHANGE_TEAM"
-	{
-		"#format"		"{1:N}"
-		"ru"			"Отсчёт прерван: {olive}{1}{default} сменил команду"
-	}
+    "PANEL_BLOCK_TEAM"
+    {
+        "#format"        "{1:d},{2:s}"
+        "ru"             "->{1}. {2}"
+    }
 
-	"STOP_COUNTDOWN_PLAYER_UNREADY"
-	{
-		"#format"		"{1:N}"
-		"ru"			"Отсчёт прерван: {olive}{1}{default} не готов"
-	}
+    "PANEL_SURVIVOR_TEAM"
+    {
+        "ru"             "Survivor team"
+    }
 
-	"PANEL_BLOCK_TEAM"
-	{
-		"#format"		"{1:d},{2:s},{3:d},{4:d}"
-		"ru"			"->{1}. {2} [{3}/{4}]"
-	}
+    "PANEL_INFECTED_TEAM"
+    {
+        "ru"             "Infected team"
+    }
 
-	"PANEL_SURVIVOR_TEAM"
-	{
-		"ru"			"Survivor"
-	}
+    "PANEL_CASTER_TEAM"
+    {
+        "ru"             "Caster team"
+    }
 
-	"PANEL_INFECTED_TEAM"
-	{
-		"ru"			"Infected"
-	}
+    "PANEL_MARK_READY"
+    {
+        "ru"             "▣"
+    }
 
-	"PANEL_CASTER_TEAM"
-	{
-		"ru"			"Caster"
-	}
+    "PANEL_MARK_UNREADY"
+    {
+        "ru"             "▢"
+    }
 
-	"PANEL_PLAYER_READY"
-	{
-		"ru"			"■"
-	}
+    "PANEL_MARK_AFK"
+    {
+        "ru"             "[AFK] "
+    }
 
-	"PANEL_PLAYER_UNREADY"
-	{
-		"ru"			"□"
-	}
+    "PANEL_BLOCK_ITEM"
+    {
+        "#format"        "{1:s},{2:s},{3:s}"
+        "ru"             "{1} {2}{3}"
+    }
 
-	"PANEL_BLOCK_AFK"
-	{
-		"ru"			"[AFK] "
-	}
+    "PANEL_CONNECTING_DELAY"
+    {
+        "#format"       "{1:d}"
+        "ru"             "Загрузка {1} игроков..."
+    }
 
-	"PANEL_BLOCK_ITEM"
-	{
-		"#format"		"{1:s},{2:s},{3:N}"
-		"ru"			"{1} {2}{3}"
-	}
+    "PANEL_AUTOSTART_TIMER"
+    {
+        "#format"        "{1:d}"
+        "ru"             "Начало игры через {1} сек"
+    }
+
+    "PANEL_ALREADY_READY"
+    {
+        "ru"             "Раунд начнётся, когда\nвыжившие покинут безопасную зону"
+    }
+
+    "STOP_SPAM_COMMAND"
+    {
+        "#format"        "{1:.1f}"
+        "ru"             "Прекратите спамить статусом готовности {1} сек"
+    }
+
+    "STOP_SPAM_COMMAND_WITH_INC"
+    {
+        "#format"        "{1:.1f},{2:.1f}"
+        "ru"             "Прекратите спамить статусом готовности {1} ({red}+{2}{default}) сек"
+    }
+
+    "FORCE_START_BY_ADMIN"
+    {
+        "#format"       "{1:s}"
+        "ru"            "Игра {green}принудительно{default} запущена {olive}{1}"
+    }
 }

@@ -1,100 +1,118 @@
 "Phrases"
 {
-	"TAG"
-	{
-		"en"			"<{green}ReadyUp{default}> "
-	}
+    "TAG"
+    {
+        "en"            "<{green}ReadyUp{default}> "
+    }
 
-	"AUTOSTART_WAIT_LOADING_PLAYERS"
-	{
-		"en"			"Wait connecting players"
-	}
+    "PANEL_COUNTDOWN"
+    {
+        "#format"       "{1:d}"
+        "en"            "Countdown: {1} sec"
+    }
 
-	"AUTOSTART_COUNTDOWN_END"
-	{
-		"en"			"Now you can start"
-	}
+    "STOP_COUNTDOWN_PLAYER_DISCONNECT"
+    {
+        "#format"       "{1:s}"
+        "en"            "Countdown interrupted: {olive}{1}{default} disconnected"
+    }
 
-	"AUTOSTART_COUNTDOWN"
-	{
-		"#format"		"{1:d}"
-		"en"			"Wait {1} sec"
-	}
+    "STOP_COUNTDOWN_PLAYER_CHANGE_TEAM"
+    {
+        "#format"       "{1:s}"
+        "en"            "Countdown interrupted: {olive}{1}{default} changed team"
+    }
 
-	"START_COUNTDOWN_END"
-	{
-		"en"			"Now you can start"
-	}
+    "STOP_COUNTDOWN_PLAYER_UNREADY"
+    {
+        "#format"       "{1:s}"
+        "en"            "Countdown interrupted: {olive}{1}{default} not ready"
+    }
 
-	"START_COUNTDOWN"
-	{
-		"#format"		"{1:d}"
-		"en"			"Wait {1} sec"
-	}
+    "PANEL_DISABLED"
+    {
+        "en"            "The panel is {olive}hidden"
+    }
 
-	"STOP_COUNTDOWN_PLAYER_DISCONNECT"
-	{
-		"#format"		"{1:N}"
-		"en"			"Countdown stopped: {olive}{1}{default} diconnected"
-	}
+    "PANEL_ENABLED"
+    {
+        "en"            "The panel is {olive}shown"
+    }
 
-	"STOP_COUNTDOWN_PLAYER_CHANGE_TEAM"
-	{
-		"#format"		"{1:N}"
-		"en"			"Countdown stopped: {olive}{1}{default} changed team"
-	}
+    "PANEL_BLOCK_TEAM"
+    {
+        "#format"       "{1:d},{2:s}"
+        "en"            "->{1}. {2}"
+    }
 
-	"STOP_COUNTDOWN_PLAYER_UNREADY"
-	{
-		"#format"		"{1:N}"
-		"en"			"Countdown stopped: {olive}{1}{default} not ready"
-	}
+    "PANEL_SURVIVOR_TEAM"
+    {
+        "en"            "Survivor team"
+    }
 
-	"PANEL_BLOCK_TEAM"
-	{
-		"#format"		"{1:d},{2:s},{3:d},{4:d}"
-		"en"			"->{1}. {2} [{3}/{4}]"
-	}
+    "PANEL_INFECTED_TEAM"
+    {
+        "en"            "Infected team"
+    }
 
-	"PANEL_BLOCK_TEAM_SHORT"
-	{
-		"#format"		"{1:d},{2:s}"
-		"en"			"->{1}. {2}"
-	}
+    "PANEL_CASTER_TEAM"
+    {
+        "en"            "Caster team"
+    }
 
-	"PANEL_SURVIVOR_TEAM"
-	{
-		"en"			"Survivor"
-	}
+    "PANEL_MARK_READY"
+    {
+        "en"            "▣"
+    }
 
-	"PANEL_INFECTED_TEAM"
-	{
-		"en"			"Infected"
-	}
+    "PANEL_MARK_UNREADY"
+    {
+        "en"            "▢"
+    }
 
-	"PANEL_CASTER_TEAM"
-	{
-		"en"			"Caster"
-	}
+    "PANEL_MARK_AFK"
+    {
+        "en"            "[AFK] "
+    }
 
-	"PANEL_PLAYER_READY"
-	{
-		"en"			"■"
-	}
+    "PANEL_BLOCK_ITEM"
+    {
+        "#format"       "{1:s},{2:s},{3:s}"
+        "en"            "{1} {2}{3}"
+    }
 
-	"PANEL_PLAYER_UNREADY"
-	{
-		"en"			"□"
-	}
+    "PANEL_CONNECTING_DELAY"
+    {
+        "#format"       "{1:d}"
+        "en"            "Loading {1} players..."
+    }
 
-	"PANEL_BLOCK_AFK"
-	{
-		"en"			"[AFK] "
-	}
+    "PANEL_AUTOSTART_TIMER"
+    {
+        "#format"       "{1:d}"
+        "en"            "Game starts in {1} sec"
+    }
 
-	"PANEL_BLOCK_ITEM"
-	{
-		"#format"		"{1:s},{2:s},{3:s}"
-		"en"			"{1} {2}{3}"
-	}
+    "PANEL_ALREADY_READY"
+    {
+        "en"            "The round will start when\nthe survivors leave the safe zone"
+    }
+
+    "STOP_SPAM_COMMAND"
+    {
+        "#format"       "{1:.1f}"
+        "en"            "Stop spamming ready status {1} sec"
+    }
+
+    "STOP_SPAM_COMMAND_WITH_INC"
+    {
+        "#format"       "{1:.1f},{2:.1f}"
+        "en"            "Stop spamming ready status {1} ({red}+{2}{default}) sec"
+    }
+
+    "FORCE_START_BY_ADMIN"
+    {
+        "#format"       "{1:s}"
+        "en"            "Game start is {green}forced{default} by {olive}{1}"
+    }
 }
