@@ -67,12 +67,12 @@ enum Mode
 	Mode_TeamReady
 }
 
-enum State
+enum ReadyupState
 {
-	State_None = 0,
-	State_UnReady,
-	State_Countdown,
-	State_Ready
+	ReadyupState_None = 0,
+	ReadyupState_UnReady,
+	ReadyupState_Countdown,
+	ReadyupState_Ready
 }
 
 enum PanelPos
@@ -117,10 +117,6 @@ char
 	g_sLiveSound[PLATFORM_MAX_PATH]
 ;
 
-float
-	g_fLastClientActivityTime[MAXPLAYERS + 1] = {0.0, ...}
-;
-
 int
 	g_iDelay = 0,
 	g_iTimer = 0,
@@ -130,6 +126,8 @@ int
 
 float g_fAfkDuration = 0.0;
 
+float g_fLastClientActivityTime[MAXPLAYERS + 1] = {0.0, ...};
+
 bool
 	g_bClientReady[MAXPLAYERS + 1],
 	g_bClientPanelVisible[MAXPLAYERS + 1]
@@ -137,7 +135,7 @@ bool
 
 bool g_bCasterAvailable = false; /**< Caster System */
 
-State g_eState = State_None;
+ReadyupState g_eReadyupState = ReadyupState_None;
 
 Mode g_eMode = Mode_AlwaysReady;
 
@@ -189,9 +187,7 @@ public void OnLibraryAdded(const char[] sName)
  */
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
-	EngineVersion engine = GetEngineVersion();
-
-	if (engine != Engine_Left4Dead2)
+	if (GetEngineVersion() != Engine_Left4Dead2)
 	{
 		strcopy(error, err_max, "Plugin only supports Left 4 Dead 2.");
 		return APLRes_SilentFailure;
@@ -221,7 +217,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 }
 
 any Native_GetReadyState(Handle hPlugin, int iParams) {
-	return g_eState;
+	return g_eReadyupState;
 }
 
 any Native_GetReadyMode(Handle hPlugin, int iParams) {
@@ -384,6 +380,7 @@ public void OnPluginStart()
 {
 	LoadTranslations(TRANSLATION);
 
+	// ConVars.
 	g_cvMode = CreateConVar("sm_readyup_mode", "2", "Enable this plugin. (Values: 0 = Disabled, 1 = Auto start, 2 = Player ready, 3 = Team ready)", _, true, 0.0, true, 3.0);
 	g_cvDelay = CreateConVar("sm_readyup_delay", "3", "Number of seconds to count down before the round goes live", _, true, 0.0);
 	g_cvAutoStartDelay = CreateConVar("sm_readyup_autostart_delay", "20.0", "Number of seconds to wait for connecting players before auto-start is forced", _, true, 0.0);
@@ -392,8 +389,6 @@ public void OnPluginStart()
 	g_cvSoundNotify = CreateConVar("sm_readyup_sound_notify", DEFAULT_NOTIFY_SOUND, "The sound that plays when a round goes on countdown");
 	g_cvSoundCountdown = CreateConVar("sm_readyup_sound_countdown", DEFAULT_COUNTDOWN_SOUND, "The sound that plays when a round goes on countdown");
 	g_cvSoundLive = CreateConVar("sm_readyup_sound_live", DEFAULT_LIVE_SOUND, "The sound that plays when a round goes live");
-
-	// game convars
 	(g_cvGod = FindConVar("god"));
 	(g_cvSbStop = FindConVar("sb_stop"));
 	(g_cvSurvivorLimit = FindConVar("survivor_limit"));
@@ -471,14 +466,14 @@ public Action L4D_OnFirstSurvivorLeftSafeArea(int iClient)
 		SetConVarStringSilence(g_cvInfinitePrimaryAmmo, "0");
 		SetConVarStringSilence(g_cvSbStop, "0");
 
-		SetReadyState(State_None);
+		SetReadyState(ReadyupState_None);
 
 		return Plugin_Continue;
 	}
 
 	if (!IsReadyStateInProgress())
 	{
-		SetReadyState(State_None);
+		SetReadyState(ReadyupState_None);
 
 		return Plugin_Continue;
 	}
@@ -508,14 +503,14 @@ void Event_RoundStart(Event event, const char[] name, bool dontBroadcast)
 	}
 
 	// Vars.
-	SetReadyState(State_UnReady);
+	SetReadyState(ReadyupState_UnReady);
 
 	// Show panel.
 	CreateTimer(1.0, Timer_UpdatePanel, .flags = TIMER_FLAG_NO_MAPCHANGE | TIMER_REPEAT);
 
 	if (g_eMode == Mode_AutoStart)
 	{
-		SetReadyState(State_Countdown);
+		SetReadyState(ReadyupState_Countdown);
 
 		g_iAutoStartTimer = g_iAutoStartDelay;
 		CreateTimer(1.0, Timer_AutoStart, .flags = TIMER_FLAG_NO_MAPCHANGE | TIMER_REPEAT);
@@ -591,7 +586,7 @@ Action Timer_AutoStart(Handle timer)
 		SetConVarStringSilence(g_cvInfinitePrimaryAmmo, "0");
 		SetConVarStringSilence(g_cvSbStop, "0");
 
-		SetReadyState(State_Ready);
+		SetReadyState(ReadyupState_Ready);
 
 		return Plugin_Stop;
 	}
@@ -646,7 +641,7 @@ Action Event_PlayerTeam(Event event, const char[] name, bool dontBroadcast)
 				CPrintToChat(iPlayer, "%T%T", "TAG", iPlayer, "STOP_COUNTDOWN_PLAYER_DISCONNECT", iPlayer, iClient);
 			}
 
-			SetReadyState(State_UnReady);
+			SetReadyState(ReadyupState_UnReady);
 		}
 	}
 
@@ -667,6 +662,10 @@ Action Event_PlayerTeam(Event event, const char[] name, bool dontBroadcast)
  */
 Action Timer_PlayerTeam(Handle hTimer, DataPack hPack)
 {
+	if (!IsReadyStateCountdown()) {
+		return Plugin_Stop;
+	}
+
 	hPack.Reset();
 
 	int iClient = hPack.ReadCell();
@@ -694,7 +693,7 @@ Action Timer_PlayerTeam(Handle hTimer, DataPack hPack)
 				CPrintToChat(iPlayer, "%T%T", "TAG", iPlayer, "STOP_COUNTDOWN_PLAYER_CHANGE_TEAM", iPlayer, iClient);
 			}
 
-			SetReadyState(State_UnReady);
+			SetReadyState(ReadyupState_UnReady);
 		}
 	}
 
@@ -722,7 +721,7 @@ Action Timer_Countdown(Handle timer)
 		SetConVarStringSilence(g_cvInfinitePrimaryAmmo, "0");
 		SetConVarStringSilence(g_cvSbStop, "0");
 
-		SetReadyState(State_Ready);
+		SetReadyState(ReadyupState_Ready);
 
 		return Plugin_Stop;
 	}
@@ -822,7 +821,7 @@ Action Cmd_Ready(int iClient, int iArgs)
 
 	if (IsGameReady())
 	{
-		SetReadyState(State_Countdown);
+		SetReadyState(ReadyupState_Countdown);
 
 		g_iTimer = g_iDelay;
 		CreateTimer(1.0, Timer_Countdown, .flags = TIMER_FLAG_NO_MAPCHANGE | TIMER_REPEAT);
@@ -875,7 +874,7 @@ Action Cmd_Unready(int iClient, int iArgs)
 			CPrintToChat(iPlayer, "%T%T", "TAG", iPlayer, "STOP_COUNTDOWN_PLAYER_UNREADY", iPlayer, iClient);
 		}
 
-		SetReadyState(State_UnReady);
+		SetReadyState(ReadyupState_UnReady);
 	}
 
 	return Plugin_Handled;
@@ -1223,21 +1222,19 @@ bool IsModeNeedClientAction() {
 /**
  *
  */
-void SetReadyState(State eState)
+void SetReadyState(ReadyupState eReadyupState)
 {
-	State eOldState = g_eState;
-
-	if (eOldState != eState) {
-		ExecuteForward_OnChangeReadyState(eOldState, eState);
+	if (g_eReadyupState != eReadyupState) {
+		ExecuteForward_OnChangeReadyState(g_eReadyupState, eReadyupState);
 	}
 
-	g_eState = eState;
+	g_eReadyupState = eReadyupState;
 }
 
 /**
  *
  */
-void ExecuteForward_OnChangeReadyState(State eOldState, State eNewState)
+void ExecuteForward_OnChangeReadyState(ReadyupState eOldState, ReadyupState eNewState)
 {
 	if (GetForwardFunctionCount(g_fwdOnChangeReadyState))
 	{
@@ -1252,14 +1249,14 @@ void ExecuteForward_OnChangeReadyState(State eOldState, State eNewState)
  *
  */
 bool IsReadyStateInProgress() {
-	return g_eState != State_None && g_eState != State_Ready;
+	return g_eReadyupState != ReadyupState_None && g_eReadyupState != ReadyupState_Ready;
 }
 
 /**
  *
  */
 bool IsReadyStateCountdown() {
-	return g_eState == State_Countdown;
+	return g_eReadyupState == ReadyupState_Countdown;
 }
 
 /**

@@ -11,12 +11,12 @@ enum Mode
 	Mode_TeamReady
 }
 
-enum State
+enum ReadyupState
 {
-	State_None = 0,
-	State_UnReady,
-	State_Countdown,
-	State_Ready
+	ReadyupState_None = 0,
+	ReadyupState_UnReady,
+	ReadyupState_Countdown,
+	ReadyupState_Ready
 }
 
 enum PanelPos
@@ -28,7 +28,7 @@ enum PanelPos
 /**
  *
  */
-native State GetReadyState();
+native ReadyupState GetReadyState();
 
 /**
  *
@@ -73,7 +73,7 @@ native int RemovePanelItem(PanelPos ePos, int iIndex);
 /**
  *
  */
-forward void OnChangeReadyState(State eOldState, State eNewState);
+forward void OnChangeReadyState(ReadyupState eOldState, ReadyupState eNewState);
 
 /**
  *
