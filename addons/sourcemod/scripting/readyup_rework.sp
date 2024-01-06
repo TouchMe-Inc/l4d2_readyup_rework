@@ -207,7 +207,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	// Forwards.
 	g_fwdOnChangeReadyState = CreateGlobalForward("OnChangeReadyState", ET_Ignore, Param_Cell, Param_Cell);
 	g_fwdOnChangeClientReady = CreateGlobalForward("OnChangeClientReady", ET_Ignore, Param_Cell, Param_Cell);
-	g_fwdOnPreparePanelItem = CreateGlobalForward("OnPreparePanelItem", ET_Ignore, Param_Cell, Param_Cell, Param_Cell);
+	g_fwdOnPreparePanelItem = CreateGlobalForward("OnPreparePanelItem", ET_Hook, Param_Cell, Param_Cell, Param_Cell);
 	g_fwdOnRemovePanelItem = CreateGlobalForward("OnRemovePanelItem", ET_Ignore, Param_Cell, Param_Cell);
 
 	// Library.
