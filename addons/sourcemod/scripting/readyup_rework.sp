@@ -381,7 +381,7 @@ public void OnPluginStart()
 	LoadTranslations(TRANSLATION);
 
 	// ConVars.
-	g_cvMode = CreateConVar("sm_readyup_mode", "2", "Enable this plugin. (Values: 0 = Disabled, 1 = Auto start, 2 = Player ready, 3 = Team ready)", _, true, 0.0, true, 3.0);
+	g_cvMode = CreateConVar("sm_readyup_mode", "2", "Plugin operating mode (Values: 0 = Disabled, 1 = Auto start, 2 = Player ready, 3 = Team ready)", _, true, 0.0, true, 3.0);
 	g_cvDelay = CreateConVar("sm_readyup_delay", "3", "Number of seconds to count down before the round goes live", _, true, 0.0);
 	g_cvAutoStartDelay = CreateConVar("sm_readyup_autostart_delay", "20.0", "Number of seconds to wait for connecting players before auto-start is forced", _, true, 0.0);
 	g_cvAfkDuration = CreateConVar("sm_readyup_afk_duration", "15.0", "Number of seconds to count down before the round goes live", _, true, 1.0);
