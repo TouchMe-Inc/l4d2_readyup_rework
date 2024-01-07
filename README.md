@@ -19,7 +19,7 @@ The plugin allows you to control the moment the round starts.
 Coming soon...
 
 ## Developers
-In the repository you can find the file [addons/sourcemod/scripting/include/readyup_rework.inc](https://github.com/TouchMe-Inc/l4d2_readyup_rework/blob/main/addons/sourcemod/scripting/readyup_rework.sp) , which contains the plugin API. 
+In the repository you can find the file [addons/sourcemod/scripting/include/readyup_rework.inc](https://github.com/TouchMe-Inc/l4d2_readyup_rework/blob/main/addons/sourcemod/scripting/include/readyup_rework.inc) , which contains the plugin API. 
 At the moment I have not prepared a description :c
 
 Coming soon...
