@@ -386,7 +386,7 @@ public void OnPluginStart()
 	g_cvAutoStartDelay = CreateConVar("sm_readyup_autostart_delay", "20.0", "Number of seconds before forced automatic start (only sm_readyup_mode 1)", _, true, 0.0);
 	g_cvAfkDuration = CreateConVar("sm_readyup_afk_duration", "15.0", "Number of seconds since the player's last activity to count his afk", _, true, 1.0);
 	g_cvSoundEnable = CreateConVar("sm_readyup_sound_enable", "1", "Enable sounds played to clients", _, true, 0.0, true, 1.0);
-	g_cvSoundNotify = CreateConVar("sm_readyup_sound_notify", DEFAULT_NOTIFY_SOUND, "The sound that plays when a round goes on countdown");
+	g_cvSoundNotify = CreateConVar("sm_readyup_sound_notify", DEFAULT_NOTIFY_SOUND, "Path to the sound that is played when the client status changes");
 	g_cvSoundCountdown = CreateConVar("sm_readyup_sound_countdown", DEFAULT_COUNTDOWN_SOUND, "The sound that plays when a round goes on countdown");
 	g_cvSoundLive = CreateConVar("sm_readyup_sound_live", DEFAULT_LIVE_SOUND, "The sound that plays when a round goes live");
 	(g_cvGod = FindConVar("god"));
