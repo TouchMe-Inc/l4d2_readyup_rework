@@ -15,6 +15,8 @@ The plugin allows you to control the moment the round starts.
 | sm_readyup_delay     | 3             | Number of seconds to count down before the round goes live                                      |
 | sm_readyup_autostart_delay | 20.0    | Number of seconds before forced automatic start (only `sm_readyup_mode 1`)                      |
 | sm_readyup_afk_duration | 15.0       | Number of seconds since the player's last activity to count his afk                             |
+| sm_readyup_sound_enable | 1          | Enable sounds played to clients                                                                 |
+| sm_readyup_sound_notify | "buttons/button14.wav" | Path to the sound that is played when the client status changes                     |
 
 Coming soon...
 
