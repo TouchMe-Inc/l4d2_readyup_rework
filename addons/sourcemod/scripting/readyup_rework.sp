@@ -18,7 +18,7 @@ public Plugin myinfo =
 	name = "ReadyupRework",
 	author = "CanadaRox, TouchMe",
 	description = "The plugin allows you to control the moment the round starts",
-	version = "build0001",
+	version = "build0002",
 	url = "https://github.com/TouchMe-Inc/l4d2_readyup_rework"
 };
 
@@ -425,6 +425,19 @@ public void OnPluginStart()
 
 	g_hPanelHeader = CreateArray(ByteCountToCells(64));
 	g_hPanelFooter = CreateArray(ByteCountToCells(64));
+}
+
+public void OnPluginEnd()
+{
+	if (IsReadyStateInProgress())
+	{
+		EnableForceStartTime();
+		ReturnSurvivorToSaferoom();
+
+		SetConVarStringSilence(g_cvGod, "0");
+		SetConVarStringSilence(g_cvInfinitePrimaryAmmo, "0");
+		SetConVarStringSilence(g_cvSbStop, "0");
+	}	
 }
 
 /**
