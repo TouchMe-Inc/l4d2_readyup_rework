@@ -392,8 +392,7 @@ public void OnPluginStart()
 	HookConVarChange(g_cvAfkDuration, OnAfkDurationChanged);
 
 	// Player Commands.
-	RegConsoleCmd("sm_hide", Cmd_HidePanel, "Hides the ready-up panel so other menus can be seen");
-	RegConsoleCmd("sm_show", Cmd_ShowPanel, "Shows a hidden ready-up panel");
+	RegConsoleCmd("sm_readyup", Cmd_TogglePanel, "Show/hide the readyup panel");
 	RegConsoleCmd("sm_return", Cmd_ReturnToSaferoom, "Return to a valid saferoom spawn if you get stuck during an unfrozen ready-up period");
 	RegConsoleCmd("sm_ready", Cmd_Ready, "Mark yourself as ready for the round to go live");
 	RegConsoleCmd("sm_r", Cmd_Ready, "Mark yourself as ready for the round to go live");
@@ -712,37 +711,23 @@ Action Timer_Countdown(Handle timer)
 /**
  *
  */
-Action Cmd_ShowPanel(int iClient, int iArgs)
+Action Cmd_TogglePanel(int iClient, int iArgs)
 {
 	if (!IsReadyStateInProgress()) {
 		return Plugin_Continue;
 	}
 
-	if (IsClientPanelVisible(iClient)) {
-		return Plugin_Handled;
+	if (IsClientPanelVisible(iClient))
+	{
+		SetClientPanelVisible(iClient, false);
+		CPrintToChat(iClient, "%T%T", "TAG", iClient, "PANEL_DISABLED", iClient);
 	}
 
-	SetClientPanelVisible(iClient, true);
-	CPrintToChat(iClient, "%T%T", "TAG", iClient, "PANEL_SHOW", iClient);
-
-	return Plugin_Handled;
-}
-
-/**
- *
- */
-Action Cmd_HidePanel(int iClient, int iArgs)
-{
-	if (!IsReadyStateInProgress()) {
-		return Plugin_Continue;
+	else
+	{
+		SetClientPanelVisible(iClient, true);
+		CPrintToChat(iClient, "%T%T", "TAG", iClient, "PANEL_ENABLED", iClient);
 	}
-
-	if (!IsClientPanelVisible(iClient)) {
-		return Plugin_Handled;
-	}
-
-	SetClientPanelVisible(iClient, false);
-	CPrintToChat(iClient, "%T%T", "TAG", iClient, "PANEL_HIDDEN", iClient);
 
 	return Plugin_Handled;
 }

@@ -50,6 +50,16 @@
 		"ru"			"Отсчёт прерван: {olive}{1}{default} не готов"
 	}
 
+	"PANEL_DISABLED"
+	{
+		"ru"			"Панель отключена"
+	}
+
+	"PANEL_ENABLED"
+	{
+		"ru"			"Панель включена"
+	}
+
 	"PANEL_BLOCK_TEAM"
 	{
 		"#format"		"{1:d},{2:s},{3:d},{4:d}"

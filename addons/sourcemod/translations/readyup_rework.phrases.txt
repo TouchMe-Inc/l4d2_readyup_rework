@@ -50,6 +50,16 @@
 		"en"			"Countdown stopped: {olive}{1}{default} not ready"
 	}
 
+	"PANEL_DISABLED"
+	{
+		"en"			"Panel disabled"
+	}
+
+	"PANEL_ENABLED"
+	{
+		"en"			"Panel enabled"
+	}
+
 	"PANEL_BLOCK_TEAM"
 	{
 		"#format"		"{1:d},{2:s},{3:d},{4:d}"
