@@ -94,12 +94,10 @@ public Action OnPreparePanelItem(PanelPos ePos, int iClient, int iIndex)
 		return Plugin_Continue;
 	}
 
-	char sInfo[64];
+	char sTankPercent[32], sWitchPercent[32], sInfo[64];
 
 	if (IsTankSpawnAllow())
 	{
-		char sTankPercent[32];
-
 		int iTankPercent = GetTankFlowPercent();
 
 		if (IsStaticTankMap()) {
@@ -111,16 +109,12 @@ public Action OnPreparePanelItem(PanelPos ePos, int iClient, int iIndex)
 		}
 
 		else {
-			FormatEx(sTankPercent, sizeof(sTankPercent), "%d%%", iTankPercent);
+			FormatEx(sTankPercent, sizeof(sTankPercent), "%T", "PERCENT", iClient, iTankPercent);
 		}
-
-		FormatEx(sInfo, sizeof(sInfo), "%T ", "TANK_FLOW", iClient, sTankPercent);
 	}
 
 	if (IsWitchSpawnAllow())
 	{
-		char sWitchPercent[32];
-
 		int iWitchPercent = GetWitchFlowPercent();
 
 		if (IsStaticWitchMap()) {
@@ -132,10 +126,20 @@ public Action OnPreparePanelItem(PanelPos ePos, int iClient, int iIndex)
 		}
 
 		else {
-			FormatEx(sWitchPercent, sizeof(sWitchPercent), "%d%%", iWitchPercent);
+			FormatEx(sWitchPercent, sizeof(sWitchPercent), "%T", "PERCENT", iClient, iWitchPercent);
 		}
+	}
 
-		FormatEx(sInfo, sizeof(sInfo), "%s%T", sInfo, "WITCH_FLOW", iClient, sWitchPercent);
+	if (sTankPercent[0] != '\0' && sWitchPercent[0] != '\0') {
+		FormatEx(sInfo, sizeof(sInfo), "%T %T", "TANK_FLOW", iClient, sTankPercent, "WITCH_FLOW", iClient, sWitchPercent);
+	} else if (sTankPercent[0] != '\0' ) {
+		FormatEx(sInfo, sizeof(sInfo), "%T", "TANK_FLOW", iClient, sTankPercent);
+	} else if (sWitchPercent[0] != '\0') {
+		FormatEx(sInfo, sizeof(sInfo), "%T", "WITCH_FLOW", iClient, sWitchPercent);
+	}
+
+	if (sInfo[0] == '\0') {
+		return Plugin_Continue;
 	}
 
 	UpdatePanelItem(ePos, iIndex, sInfo);

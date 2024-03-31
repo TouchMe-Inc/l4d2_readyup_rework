@@ -2,14 +2,20 @@
 {
 	"STATIC"
 	{
-		"en"			"static"
+		"en"			"Static"
 	}
 
 	"DISABLE"
 	{
-		"en"			"disable"
+		"en"			"Disable"
 	}
 
+	"PERCENT"
+	{
+		"#format"		"{1:d}"
+		"en"			"{1}%%"
+	}
+	
 	"TANK_FLOW"
 	{
 		"#format"		"{1:s}"
