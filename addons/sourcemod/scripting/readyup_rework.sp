@@ -849,7 +849,7 @@ Action Cmd_Unready(int iClient, int iArgs)
 				continue;
 			}
 
-			etClientNameFixed(iClient, sPlayerName, sizeof(sPlayerName), 18);
+			GetClientNameFixed(iClient, sPlayerName, sizeof(sPlayerName), 18);
 
 			CPrintToChat(iPlayer, "%T%T", "TAG", iPlayer, "STOP_COUNTDOWN_PLAYER_UNREADY", iPlayer, sPlayerName);
 		}
