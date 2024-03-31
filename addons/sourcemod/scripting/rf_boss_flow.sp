@@ -111,7 +111,7 @@ public Action OnPreparePanelItem(PanelPos ePos, int iClient, int iIndex)
 		}
 
 		else {
-			FormatEx(sTankPercent, sizeof(sTankPercent), "%d", iTankPercent);
+			FormatEx(sTankPercent, sizeof(sTankPercent), "%d%%", iTankPercent);
 		}
 
 		FormatEx(sInfo, sizeof(sInfo), "%T ", "TANK_FLOW", iClient, sTankPercent);
@@ -132,7 +132,7 @@ public Action OnPreparePanelItem(PanelPos ePos, int iClient, int iIndex)
 		}
 
 		else {
-			FormatEx(sWitchPercent, sizeof(sWitchPercent), "%d", iWitchPercent);
+			FormatEx(sWitchPercent, sizeof(sWitchPercent), "%d%%", iWitchPercent);
 		}
 
 		FormatEx(sInfo, sizeof(sInfo), "%s%T", sInfo, "WITCH_FLOW", iClient, sWitchPercent);

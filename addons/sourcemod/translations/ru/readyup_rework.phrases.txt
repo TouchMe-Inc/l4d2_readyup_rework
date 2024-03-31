@@ -12,41 +12,41 @@
 
 	"AUTOSTART_COUNTDOWN_END"
 	{
-		"ru"			"Теперь можете начинать"
+		"ru"			"Теперь вы можете покинуть безопасную зону"
 	}
 
 	"AUTOSTART_COUNTDOWN"
 	{
 		"#format"		"{1:d}"
-		"ru"			"Ожидайте {1} сек."
+		"ru"			"Подождите {1} сек."
 	}
 
 	"START_COUNTDOWN_END"
 	{
-		"ru"			"Теперь можете начинать"
+		"ru"			"Теперь вы можете покинуть безопасную зону"
 	}
 
 	"START_COUNTDOWN"
 	{
 		"#format"		"{1:d}"
-		"ru"			"Ожидайте {1} сек."
+		"ru"			"Подождите {1} сек."
 	}
 
 	"STOP_COUNTDOWN_PLAYER_DISCONNECT"
 	{
-		"#format"		"{1:N}"
+		"#format"		"{1:s}"
 		"ru"			"Отсчёт прерван: {olive}{1}{default} отключился"
 	}
 
 	"STOP_COUNTDOWN_PLAYER_CHANGE_TEAM"
 	{
-		"#format"		"{1:N}"
+		"#format"		"{1:s}"
 		"ru"			"Отсчёт прерван: {olive}{1}{default} сменил команду"
 	}
 
 	"STOP_COUNTDOWN_PLAYER_UNREADY"
 	{
-		"#format"		"{1:N}"
+		"#format"		"{1:s}"
 		"ru"			"Отсчёт прерван: {olive}{1}{default} не готов"
 	}
 

@@ -12,7 +12,7 @@
 
 	"AUTOSTART_COUNTDOWN_END"
 	{
-		"en"			"Now you can start"
+		"en"			"You can now leave the safe zone"
 	}
 
 	"AUTOSTART_COUNTDOWN"
@@ -23,7 +23,7 @@
 
 	"START_COUNTDOWN_END"
 	{
-		"en"			"Now you can start"
+		"en"			"You can now leave the safe zone"
 	}
 
 	"START_COUNTDOWN"
@@ -34,19 +34,19 @@
 
 	"STOP_COUNTDOWN_PLAYER_DISCONNECT"
 	{
-		"#format"		"{1:N}"
+		"#format"		"{1:s}"
 		"en"			"Countdown stopped: {olive}{1}{default} diconnected"
 	}
 
 	"STOP_COUNTDOWN_PLAYER_CHANGE_TEAM"
 	{
-		"#format"		"{1:N}"
+		"#format"		"{1:s}"
 		"en"			"Countdown stopped: {olive}{1}{default} changed team"
 	}
 
 	"STOP_COUNTDOWN_PLAYER_UNREADY"
 	{
-		"#format"		"{1:N}"
+		"#format"		"{1:s}"
 		"en"			"Countdown stopped: {olive}{1}{default} not ready"
 	}
 

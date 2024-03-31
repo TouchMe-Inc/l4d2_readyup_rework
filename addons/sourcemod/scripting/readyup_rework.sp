@@ -7,18 +7,16 @@
 #include <left4dhooks>
 #include <nativevotes_rework>
 
-
 #undef REQUIRE_PLUGIN
 #include <caster_system>
 #define REQUIRE_PLUGIN
 
 
-public Plugin myinfo =
-{
+public Plugin myinfo = {
 	name = "ReadyupRework",
 	author = "CanadaRox, TouchMe",
 	description = "The plugin allows you to control the moment the round starts",
-	version = "build0002",
+	version = "build0003",
 	url = "https://github.com/TouchMe-Inc/l4d2_readyup_rework"
 };
 
@@ -34,14 +32,14 @@ public Plugin myinfo =
 #define TRANSLATION             "readyup_rework.phrases"
 
 /**
- *
+ * Sound for precache.
  */
 #define DEFAULT_NOTIFY_SOUND    "buttons/button14.wav"
 #define DEFAULT_COUNTDOWN_SOUND "weapons/hegrenade/beep.wav"
 #define DEFAULT_LIVE_SOUND      "ui/survival_medal.wav"
 
 /**
- *
+ * Teams.
  */
 #define TEAM_NONE               0
 #define TEAM_SPECTATOR          1
@@ -51,12 +49,7 @@ public Plugin myinfo =
 /**
  *
  */
-#define WATER_LEVEL_EYES        3
-
-/**
- *
- */
-#define DrawPanelSpace(%0)      (DrawPanelText(%0, " "))
+#define WATER_LEVEL_EYES         3
 
 
 enum Mode
@@ -351,21 +344,18 @@ any Native_RemovePanelItem(Handle hPlugin, int iParams)
  */
 public void OnMapStart()
 {
-	// Precache
 	GetConVarString(g_cvSoundNotify, g_sNotifySound, sizeof(g_sNotifySound));
 	if (!IsSoundExists(g_sNotifySound)) {
 		strcopy(g_sNotifySound, sizeof(g_sNotifySound), DEFAULT_NOTIFY_SOUND);
 	}
 	PrecacheSound(g_sNotifySound);
 
-	// Precache
 	GetConVarString(g_cvSoundCountdown, g_sCountdownSound, sizeof(g_sCountdownSound));
 	if (!IsSoundExists(g_sCountdownSound)) {
 		strcopy(g_sCountdownSound, sizeof(g_sCountdownSound), DEFAULT_COUNTDOWN_SOUND);
 	}
 	PrecacheSound(g_sCountdownSound);
 
-	// Precache
 	GetConVarString(g_cvSoundLive, g_sLiveSound, sizeof(g_sLiveSound));
 	if (!IsSoundExists(g_sLiveSound)) {
 		strcopy(g_sLiveSound, sizeof(g_sLiveSound), DEFAULT_LIVE_SOUND);
@@ -429,15 +419,12 @@ public void OnPluginStart()
 
 public void OnPluginEnd()
 {
-	if (IsReadyStateInProgress())
-	{
-		EnableForceStartTime();
-		ReturnSurvivorToSaferoom();
+	EnableForceStartTime();
+	ReturnSurvivorToSaferoom();
 
-		SetConVarStringSilence(g_cvGod, "0");
-		SetConVarStringSilence(g_cvInfinitePrimaryAmmo, "0");
-		SetConVarStringSilence(g_cvSbStop, "0");
-	}	
+	SetConVarStringSilence(g_cvGod, "0");
+	SetConVarStringSilence(g_cvInfinitePrimaryAmmo, "0");
+	SetConVarStringSilence(g_cvSbStop, "0");
 }
 
 /**
@@ -499,7 +486,7 @@ public Action L4D_OnFirstSurvivorLeftSafeArea(int iClient)
 /**
  *
  */
-void Event_RoundStart(Event event, const char[] name, bool dontBroadcast)
+void Event_RoundStart(Event event, const char[] sName, bool bDontBroadcast)
 {
 	DisableForceStartTime();
 
@@ -612,7 +599,7 @@ Action Timer_AutoStart(Handle timer)
 /**
  *
  */
-Action Event_PlayerTeam(Event event, const char[] name, bool dontBroadcast)
+Action Event_PlayerTeam(Event event, const char[] sName, bool bDontBroadcast)
 {
 	if (!IsModeNeedClientAction()) {
 		return Plugin_Continue;
@@ -628,45 +615,17 @@ Action Event_PlayerTeam(Event event, const char[] name, bool dontBroadcast)
 		return Plugin_Continue;
 	}
 
-	int iTeam = GetEventInt(event, "team");
 	int iOldTeam = GetEventInt(event, "oldteam");
 
-	/*
-	 * Player disconnect.
-	 */
-	if (iTeam == TEAM_NONE && iOldTeam != TEAM_SPECTATOR)
-	{
-		if (g_eMode == Mode_PlayerReady) {
-			SetTeamReady(iTeam, false);
-		} else {
-			SetClientReady(iClient, false);
-		}
+	char sPlayerName[MAX_NAME_LENGTH];
+	GetClientNameFixed(iClient, sPlayerName, sizeof(sPlayerName), 18);
 
-		if (IsReadyStateCountdown())
-		{
-			for (int iPlayer = 1; iPlayer <= MaxClients; iPlayer ++)
-			{
-				if (!IsClientInGame(iPlayer)
-				|| IsFakeClient(iPlayer)
-				|| !IsValidTeam(GetClientTeam(iPlayer))) {
-					continue;
-				}
+	DataPack hPack = CreateDataPack();
+	WritePackCell(hPack, iClient);
+	WritePackCell(hPack, iOldTeam);
+	WritePackString(hPack, sPlayerName);
 
-				CPrintToChat(iPlayer, "%T%T", "TAG", iPlayer, "STOP_COUNTDOWN_PLAYER_DISCONNECT", iPlayer, iClient);
-			}
-
-			SetReadyState(ReadyupState_UnReady);
-		}
-	}
-
-	else
-	{
-		DataPack hPack = CreateDataPack();
-		hPack.WriteCell(iClient);
-		hPack.WriteCell(iOldTeam);
-
-		CreateTimer(0.1, Timer_PlayerTeam, hPack, TIMER_DATA_HNDL_CLOSE | TIMER_FLAG_NO_MAPCHANGE);
-	}
+	CreateTimer(0.1, Timer_PlayerTeam, hPack, TIMER_DATA_HNDL_CLOSE | TIMER_FLAG_NO_MAPCHANGE);
 
 	return Plugin_Continue;
 }
@@ -676,22 +635,25 @@ Action Event_PlayerTeam(Event event, const char[] name, bool dontBroadcast)
  */
 Action Timer_PlayerTeam(Handle hTimer, DataPack hPack)
 {
-	if (!IsReadyStateCountdown()) {
+	if (!IsReadyStateInProgress()) {
 		return Plugin_Stop;
 	}
 
-	hPack.Reset();
+	ResetPack(hPack);
 
-	int iClient = hPack.ReadCell();
-	int iOldTeam = hPack.ReadCell();
-	int iTeam = GetClientTeam(iClient);
+	int iClient = ReadPackCell(hPack);
+	int iOldTeam = ReadPackCell(hPack);
+	int iNewTeam = IsClientConnected(iClient) ? GetClientTeam(iClient) : TEAM_NONE;
 
-	if (iOldTeam != TEAM_NONE || iTeam != TEAM_SPECTATOR)
+	char sPlayerName[MAX_NAME_LENGTH];
+	ReadPackString(hPack, sPlayerName, sizeof(sPlayerName));
+
+	if (IsValidTeam(iOldTeam) || IsValidTeam(iNewTeam))
 	{
+		SetClientReady(iClient, false);
+
 		if (g_eMode == Mode_PlayerReady) {
-			SetTeamReady(iTeam, false);
-		} else {
-			SetClientReady(iClient, false);
+			SetTeamReady(iNewTeam == TEAM_NONE ? iOldTeam : iNewTeam, false);
 		}
 
 		if (IsReadyStateCountdown())
@@ -704,7 +666,7 @@ Action Timer_PlayerTeam(Handle hTimer, DataPack hPack)
 					continue;
 				}
 
-				CPrintToChat(iPlayer, "%T%T", "TAG", iPlayer, "STOP_COUNTDOWN_PLAYER_CHANGE_TEAM", iPlayer, iClient);
+				CPrintToChat(iPlayer, "%T%T", "TAG", iPlayer, iNewTeam == TEAM_NONE ? "STOP_COUNTDOWN_PLAYER_DISCONNECT" : "STOP_COUNTDOWN_PLAYER_CHANGE_TEAM", iPlayer, sPlayerName);
 			}
 
 			SetReadyState(ReadyupState_UnReady);
@@ -877,6 +839,8 @@ Action Cmd_Unready(int iClient, int iArgs)
 
 	if (IsReadyStateCountdown())
 	{
+		char sPlayerName[MAX_NAME_LENGTH];
+
 		for (int iPlayer = 1; iPlayer <= MaxClients; iPlayer ++)
 		{
 			if (!IsClientInGame(iPlayer)
@@ -885,7 +849,9 @@ Action Cmd_Unready(int iClient, int iArgs)
 				continue;
 			}
 
-			CPrintToChat(iPlayer, "%T%T", "TAG", iPlayer, "STOP_COUNTDOWN_PLAYER_UNREADY", iPlayer, iClient);
+			etClientNameFixed(iClient, sPlayerName, sizeof(sPlayerName), 18);
+
+			CPrintToChat(iPlayer, "%T%T", "TAG", iPlayer, "STOP_COUNTDOWN_PLAYER_UNREADY", iPlayer, sPlayerName);
 		}
 
 		SetReadyState(ReadyupState_UnReady);
@@ -1025,7 +991,7 @@ Panel BuildPanel(int iClient)
 
 		for (int iPlayer = 0; iPlayer < iTotalPlayers[iTeam]; iPlayer ++)
 		{
-			GetClientFixedName(iPlayers[iTeam][iPlayer], sPlayerName, sizeof(sPlayerName));
+			GetClientNameFixed(iPlayers[iTeam][iPlayer], sPlayerName, sizeof(sPlayerName), 18);
 
 			if (IsClientAfk(iPlayers[iTeam][iPlayer])) {
 				FormatEx(sPlayerAfk, sizeof(sPlayerAfk), "%T", "PANEL_BLOCK_AFK", iClient);
@@ -1070,7 +1036,7 @@ Panel BuildPanel(int iClient)
 
 			for (int iPlayer = 0; iPlayer < iTotalCasters; iPlayer ++)
 			{
-				GetClientFixedName(iCaster[iPlayer], sPlayerName, sizeof(sPlayerName));
+				GetClientNameFixed(iCaster[iPlayer], sPlayerName, sizeof(sPlayerName), 18);
 
 				if (IsClientAfk(iCaster[iPlayer])) {
 					FormatEx(sPlayerAfk, sizeof(sPlayerAfk), "%T", "PANEL_BLOCK_AFK", iClient);
@@ -1126,6 +1092,15 @@ bool DrawPanelFormatText(Handle hPanel, const char[] sText, any ...)
 	VFormat(sFormatText, sizeof(sFormatText), sText, 3);
 	return DrawPanelText(hPanel, sFormatText);
 }
+
+void DrawPanelSpace(Handle hPanel) {
+	DrawPanelText(hPanel, " ");
+}
+
+/**
+ *
+ */
+#define DrawPanelSpace(%0)      (DrawPanelText(%0, " "))
 
 /**
  *
@@ -1395,10 +1370,15 @@ bool IsSoundExists(const char[] sSoundPath)
 /**
  *
  */
-void GetClientFixedName(int iClient, char[] sName, int iLength)
+void GetClientNameFixed(int iClient, char[] sName, int length, int iMaxSize)
 {
-	GetClientName(iClient, sName, iLength);
-	ReplaceString(sName, iLength, "#", "_");
+	GetClientName(iClient, sName, length);
+
+	if (strlen(sName) > iMaxSize)
+	{
+		sName[iMaxSize - 3] = sName[iMaxSize - 2] = sName[iMaxSize - 1] = '.';
+		sName[iMaxSize] = '\0';
+	}
 }
 
 /**
