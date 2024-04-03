@@ -4,8 +4,7 @@ The plugin allows you to control the moment the round starts.
 ## Commands
 * `!ready` or `!r` - Mark your status as Ready.
 * `!unready` or `!nr` - Mark your status as Not Ready.
-* `!show` - Show Ready Bar.
-* `!hide` - Hide Ready Bar.
+* `!readyup` - Show/Hide Ready Panel.
 * `!return` - Return to spawn point.
 
 ## ConVars
