@@ -81,8 +81,8 @@ char PANEL_BLOCK_NAME[][] = {
 GlobalForward
 	g_fwdOnChangeReadyState = null,
 	g_fwdOnChangeClientReady = null,
-	g_fwdOnPreparePanelItem = null,
-	g_fwdOnRemovePanelItem = null
+	g_fwdOnPrepareReadyUpItem = null,
+	g_fwdOnRemoveReadyUpItem = null
 ;
 
 ConVar
@@ -123,7 +123,7 @@ float g_fLastClientActivityTime[MAXPLAYERS + 1] = {0.0, ...};
 
 bool
 	g_bClientReady[MAXPLAYERS + 1],
-	g_bClientPanelVisible[MAXPLAYERS + 1]
+	g_bClientReadyUpVisible[MAXPLAYERS + 1]
 ;
 
 bool g_bCasterAvailable = false; /**< Caster System */
@@ -191,17 +191,17 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	CreateNative("GetReadyMode", Native_GetReadyMode);
 	CreateNative("IsClientReady", Native_IsClientReady);
 	CreateNative("SetClientReady", Native_SetClientReady);
-	CreateNative("IsClientPanelVisible", Native_IsClientPanelVisible);
-	CreateNative("SetClientPanelVisible", Native_SetClientPanelVisible);
-	CreateNative("PushPanelItem", Native_PushPanelItem);
-	CreateNative("UpdatePanelItem", Native_UpdatePanelItem);
-	CreateNative("RemovePanelItem", Native_RemovePanelItem);
+	CreateNative("IsClientReadyUpVisible", Native_IsClientReadyUpVisible);
+	CreateNative("SetClientReadyUpVisible", Native_SetClientReadyUpVisible);
+	CreateNative("PushReadyUpItem", Native_PushReadyUpItem);
+	CreateNative("UpdateReadyUpItem", Native_UpdateReadyUpItem);
+	CreateNative("RemoveReadyUpItem", Native_RemoveReadyUpItem);
 
 	// Forwards.
 	g_fwdOnChangeReadyState = CreateGlobalForward("OnChangeReadyState", ET_Ignore, Param_Cell, Param_Cell);
 	g_fwdOnChangeClientReady = CreateGlobalForward("OnChangeClientReady", ET_Ignore, Param_Cell, Param_Cell);
-	g_fwdOnPreparePanelItem = CreateGlobalForward("OnPreparePanelItem", ET_Hook, Param_Cell, Param_Cell, Param_Cell);
-	g_fwdOnRemovePanelItem = CreateGlobalForward("OnRemovePanelItem", ET_Ignore, Param_Cell, Param_Cell);
+	g_fwdOnPrepareReadyUpItem = CreateGlobalForward("OnPrepareReadyUpItem", ET_Hook, Param_Cell, Param_Cell, Param_Cell);
+	g_fwdOnRemoveReadyUpItem = CreateGlobalForward("OnRemoveReadyUpItem", ET_Ignore, Param_Cell, Param_Cell);
 
 	// Library.
 	RegPluginLibrary("readyup_rework");
@@ -249,7 +249,7 @@ any Native_SetClientReady(Handle hPlugin, int iParams)
 	return SetClientReady(iClient, bReady);
 }
 
-any Native_IsClientPanelVisible(Handle hPlugin, int iParams)
+any Native_IsClientReadyUpVisible(Handle hPlugin, int iParams)
 {
 	int iClient = GetNativeCell(1);
 
@@ -261,10 +261,10 @@ any Native_IsClientPanelVisible(Handle hPlugin, int iParams)
 		return ThrowNativeError(SP_ERROR_NATIVE, "Client %d is not in game", iClient);
 	}
 
-	return IsClientPanelVisible(iClient);
+	return IsClientReadyUpVisible(iClient);
 }
 
-any Native_SetClientPanelVisible(Handle hPlugin, int iParams)
+any Native_SetClientReadyUpVisible(Handle hPlugin, int iParams)
 {
 	int iClient = GetNativeCell(1);
 
@@ -278,12 +278,12 @@ any Native_SetClientPanelVisible(Handle hPlugin, int iParams)
 
 	bool bVisible = GetNativeCell(2);
 
-	SetClientPanelVisible(iClient, bVisible);
+	SetClientReadyUpVisible(iClient, bVisible);
 
 	return 0;
 }
 
-any Native_PushPanelItem(Handle hPlugin, int iParams)
+any Native_PushReadyUpItem(Handle hPlugin, int iParams)
 {
 	PanelPos ePos = GetNativeCell(1);
 
@@ -294,7 +294,7 @@ any Native_PushPanelItem(Handle hPlugin, int iParams)
 	return PushArrayString(hItems, sBuffer);
 }
 
-any Native_UpdatePanelItem(Handle hPlugin, int iParams)
+any Native_UpdateReadyUpItem(Handle hPlugin, int iParams)
 {
 	PanelPos ePos = GetNativeCell(1);
 
@@ -315,7 +315,7 @@ any Native_UpdatePanelItem(Handle hPlugin, int iParams)
 	return 0;
 }
 
-any Native_RemovePanelItem(Handle hPlugin, int iParams)
+any Native_RemoveReadyUpItem(Handle hPlugin, int iParams)
 {
 	PanelPos ePos = GetNativeCell(1);
 
@@ -331,7 +331,7 @@ any Native_RemovePanelItem(Handle hPlugin, int iParams)
 
 	for (int iIndex = iTargetIndex + 1; iIndex < iItemCount; iIndex ++)
 	{
-		ExecuteForward_OnRemovePanelItem(ePos, iIndex, iIndex - 1);
+		ExecuteForward_OnRemoveReadyUpItem(ePos, iIndex, iIndex - 1);
 	}
 
 	RemoveFromArray(hItems, iTargetIndex);
@@ -498,7 +498,7 @@ void Event_RoundStart(Event event, const char[] sName, bool bDontBroadcast)
 	for (int iClient = 1; iClient <= MaxClients; iClient ++)
 	{
 		g_bClientReady[iClient] = false;
-		g_bClientPanelVisible[iClient] = true;
+		g_bClientReadyUpVisible[iClient] = true;
 	}
 
 	// Vars.
@@ -533,7 +533,7 @@ Action Timer_UpdatePanel(Handle timer)
 	{
 		if (!IsClientInGame(iClient)
 		|| IsFakeClient(iClient)
-		|| !IsClientPanelVisible(iClient)) {
+		|| !IsClientReadyUpVisible(iClient)) {
 			continue;
 		}
 
@@ -717,15 +717,15 @@ Action Cmd_TogglePanel(int iClient, int iArgs)
 		return Plugin_Continue;
 	}
 
-	if (IsClientPanelVisible(iClient))
+	if (IsClientReadyUpVisible(iClient))
 	{
-		SetClientPanelVisible(iClient, false);
+		SetClientReadyUpVisible(iClient, false);
 		CPrintToChat(iClient, "%T%T", "TAG", iClient, "PANEL_DISABLED", iClient);
 	}
 
 	else
 	{
-		SetClientPanelVisible(iClient, true);
+		SetClientReadyUpVisible(iClient, true);
 		CPrintToChat(iClient, "%T%T", "TAG", iClient, "PANEL_ENABLED", iClient);
 	}
 
@@ -930,7 +930,7 @@ Panel BuildPanel(int iClient)
 
 		for (int iIndex = 0; iIndex < iHeaderSize; iIndex ++)
 		{
-			if (ExecuteForward_OnPreparePanelItem(PanelPos_Header, iClient, iIndex) == Plugin_Continue) {
+			if (ExecuteForward_OnPrepareReadyUpItem(PanelPos_Header, iClient, iIndex) == Plugin_Continue) {
 				continue;
 			}
 
@@ -1051,7 +1051,7 @@ Panel BuildPanel(int iClient)
 
 		for (int iIndex = 0; iIndex < iFooterSize; iIndex ++)
 		{
-			if (ExecuteForward_OnPreparePanelItem(PanelPos_Footer, iClient, iIndex) == Plugin_Continue) {
+			if (ExecuteForward_OnPrepareReadyUpItem(PanelPos_Footer, iClient, iIndex) == Plugin_Continue) {
 				continue;
 			}
 
@@ -1079,13 +1079,8 @@ bool DrawPanelFormatText(Handle hPanel, const char[] sText, any ...)
 }
 
 void DrawPanelSpace(Handle hPanel) {
-	DrawPanelText(hPanel, " ");
+	DrawPanelItem(hPanel, "", ITEMDRAW_SPACER);
 }
-
-/**
- *
- */
-#define DrawPanelSpace(%0)      (DrawPanelText(%0, " "))
 
 /**
  *
@@ -1101,11 +1096,13 @@ bool IsTeamReady(int iTeam)
 {
 	for (int iClient = 1; iClient <= MaxClients; iClient++)
 	{
-		if (!IsClientInGame(iClient) || IsFakeClient(iClient)) {
+		if (!IsClientInGame(iClient)
+		|| IsFakeClient(iClient)
+		|| GetClientTeam(iClient) != iTeam) {
 			continue;
 		}
 
-		if (GetClientTeam(iClient) == iTeam && !IsClientReady(iClient)) {
+		if (!IsClientReady(iClient)) {
 			return false;
 		}
 	}
@@ -1140,15 +1137,15 @@ bool IsGameReady() {
 /**
  *
  */
-bool IsClientPanelVisible(int iClient) {
-	return g_bClientPanelVisible[iClient];
+bool IsClientReadyUpVisible(int iClient) {
+	return g_bClientReadyUpVisible[iClient];
 }
 
 /**
  *
  */
-void SetClientPanelVisible(int iClient, bool bVisible) {
-	g_bClientPanelVisible[iClient] = bVisible;
+void SetClientReadyUpVisible(int iClient, bool bVisible) {
+	g_bClientReadyUpVisible[iClient] = bVisible;
 }
 
 /**
@@ -1273,13 +1270,13 @@ void ExecuteForward_OnChangeClientReady(int iClient, bool bReady)
 /**
  *
  */
-Action ExecuteForward_OnPreparePanelItem(PanelPos ePos, int iClient, int iIndex)
+Action ExecuteForward_OnPrepareReadyUpItem(PanelPos ePos, int iClient, int iIndex)
 {
 	Action aReturn = Plugin_Continue;
 
-	if (GetForwardFunctionCount(g_fwdOnPreparePanelItem))
+	if (GetForwardFunctionCount(g_fwdOnPrepareReadyUpItem))
 	{
-		Call_StartForward(g_fwdOnPreparePanelItem);
+		Call_StartForward(g_fwdOnPrepareReadyUpItem);
 		Call_PushCell(ePos);
 		Call_PushCell(iClient);
 		Call_PushCell(iIndex);
@@ -1292,11 +1289,11 @@ Action ExecuteForward_OnPreparePanelItem(PanelPos ePos, int iClient, int iIndex)
 /**
  *
  */
-void ExecuteForward_OnRemovePanelItem(PanelPos ePos, int iOldIndex, int iNewIndex)
+void ExecuteForward_OnRemoveReadyUpItem(PanelPos ePos, int iOldIndex, int iNewIndex)
 {
-	if (GetForwardFunctionCount(g_fwdOnRemovePanelItem))
+	if (GetForwardFunctionCount(g_fwdOnRemoveReadyUpItem))
 	{
-		Call_StartForward(g_fwdOnRemovePanelItem);
+		Call_StartForward(g_fwdOnRemoveReadyUpItem);
 		Call_PushCell(ePos);
 		Call_PushCell(iOldIndex);
 		Call_PushCell(iNewIndex);

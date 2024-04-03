@@ -11,10 +11,16 @@ public Plugin myinfo =
 {
 	name = "ReadyupHeaderServername",
 	author = "TouchMe",
-	description = "N/a",
-	version = "build0000",
+	description = "Adds the server name to the top of ReadyUp",
+	version = "build0001",
 	url = "https://github.com/TouchMe-Inc/l4d2_readyup_rework"
 };
+
+
+/*
+ * Libs.
+ */
+#define LIB_READY               "readyup_rework"
 
 
 ConVar
@@ -24,11 +30,43 @@ ConVar
 
 int g_iThisIndex = -1;
 
+bool g_bReadyUpAvailable = false;
+
+
 /**
   * Global event. Called when all plugins loaded.
   */
-public void OnAllPluginsLoaded() {
-	g_iThisIndex = PushPanelItem(PanelPos_Header, "OnPreparePanelItem");
+public void OnAllPluginsLoaded()
+{
+	g_bReadyUpAvailable = LibraryExists(LIB_READY);
+
+	if (g_bReadyUpAvailable) {
+		g_iThisIndex = PushReadyUpItem(PanelPos_Header, "OnPrepareReadyUpItem");
+	}
+}
+
+/**
+  * Global event. Called when a library is removed.
+  *
+  * @param sName     Library name
+  */
+public void OnLibraryRemoved(const char[] sName)
+{
+	if (StrEqual(sName, LIB_READY)) {
+		g_bReadyUpAvailable = false;
+	}
+}
+
+/**
+  * Global event. Called when a library is added.
+  *
+  * @param sName     Library name
+  */
+public void OnLibraryAdded(const char[] sName)
+{
+	if (StrEqual(sName, LIB_READY)) {
+		g_bReadyUpAvailable = true;
+	}
 }
 
 public void OnPluginStart()
@@ -43,14 +81,14 @@ public void OnPluginStart()
 /**
  *
  */
-public Action OnPreparePanelItem(PanelPos ePos, int iClient, int iIndex)
+public Action OnPrepareReadyUpItem(PanelPos ePos, int iClient, int iIndex)
 {
-	if (ePos != PanelPos_Header || g_iThisIndex != iIndex) {
+	if (!g_bReadyUpAvailable || ePos != PanelPos_Header || g_iThisIndex != iIndex) {
 		return Plugin_Continue;
 	}
 
 	char buffer[64]; GetConVarString(g_cvServerNamer, buffer, sizeof(buffer));
-	UpdatePanelItem(ePos, iIndex, buffer);
+	UpdateReadyUpItem(ePos, iIndex, buffer);
 
 	return Plugin_Stop;
 }

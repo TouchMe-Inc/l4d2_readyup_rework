@@ -48,27 +48,27 @@ native bool SetClientReady(int iClient, bool bReady);
 /**
  *
  */
-native bool IsClientPanelVisible(int iClient);
+native bool IsClientReadyUpVisible(int iClient);
 
 /**
  *
  */
-native void SetClientPanelVisible(int iClient, bool bVisible);
+native void SetClientReadyUpVisible(int iClient, bool bVisible);
 
 /**
  *
  */
-native int PushPanelItem(PanelPos ePos, const char[] sFormat, any...);
+native int PushReadyUpItem(PanelPos ePos, const char[] sFormat, any...);
 
 /**
  *
  */
-native int UpdatePanelItem(PanelPos ePos, int iIndex, const char[] sFormat, any...);
+native int UpdateReadyUpItem(PanelPos ePos, int iIndex, const char[] sFormat, any...);
 
 /**
  *
  */
-native int RemovePanelItem(PanelPos ePos, int iIndex);
+native int RemoveReadyUpItem(PanelPos ePos, int iIndex);
 
 /**
  *
@@ -83,12 +83,12 @@ forward void OnChangeClientReady(int iClient, bool bReady);
 /**
  *
  */
-forward Action OnPreparePanelItem(PanelPos ePos, int iClient, int iIndex);
+forward Action OnPrepareReadyUpItem(PanelPos ePos, int iClient, int iIndex);
 
 /**
  *
  */
-forward void OnRemovePanelItem(PanelPos ePos, int iOldIndex, int iNewIndex);
+forward void OnRemoveReadyUpItem(PanelPos ePos, int iOldIndex, int iNewIndex);
 
 
 public SharedPlugin __pl_readyup =
@@ -109,10 +109,10 @@ public void __pl_readyup_rework_SetNTVOptional()
 	MarkNativeAsOptional("GetReadyMode");
 	MarkNativeAsOptional("IsClientReady");
 	MarkNativeAsOptional("SetClientReady");
-	MarkNativeAsOptional("IsClientPanelVisible");
-	MarkNativeAsOptional("SetClientPanelVisible");
-	MarkNativeAsOptional("PushPanelItem");
-	MarkNativeAsOptional("UpdatePanelItem");
-	MarkNativeAsOptional("RemovePanelItem");
+	MarkNativeAsOptional("IsClientReadyUpVisible");
+	MarkNativeAsOptional("SetClientReadyUpVisible");
+	MarkNativeAsOptional("PushReadyUpItem");
+	MarkNativeAsOptional("UpdateReadyUpItem");
+	MarkNativeAsOptional("RemoveReadyUpItem");
 }
 #endif

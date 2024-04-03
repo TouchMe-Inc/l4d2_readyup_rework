@@ -11,8 +11,8 @@ public Plugin myinfo =
 {
 	name = "ReadyupFooterBossFlow",
 	author = "TouchMe",
-	description = "N/a",
-	version = "build0000",
+	description = "Adds boss percentages to the bottom of ReadyUp",
+	version = "build0001",
 	url = "https://github.com/TouchMe-Inc/l4d2_readyup_rework"
 }
 
@@ -34,7 +34,7 @@ public void OnAllPluginsLoaded()
 	g_bReadyUpAvailable = LibraryExists(LIB_READY);
 
 	if (g_bReadyUpAvailable) {
-		g_iThisIndex = PushPanelItem(PanelPos_Footer, "OnPreparePanelItem");
+		g_iThisIndex = PushReadyUpItem(PanelPos_Footer, "OnPrepareReadyUpItem");
 	}
 }
 
@@ -88,7 +88,7 @@ public void OnPluginStart()
 	LoadTranslations(TRANSLATIONS);
 }
 
-public Action OnPreparePanelItem(PanelPos ePos, int iClient, int iIndex)
+public Action OnPrepareReadyUpItem(PanelPos ePos, int iClient, int iIndex)
 {
 	if (!g_bReadyUpAvailable || ePos != PanelPos_Footer || g_iThisIndex != iIndex) {
 		return Plugin_Continue;
@@ -131,11 +131,11 @@ public Action OnPreparePanelItem(PanelPos ePos, int iClient, int iIndex)
 	}
 
 	if (sTankPercent[0] != '\0' && sWitchPercent[0] != '\0') {
-		UpdatePanelItem(ePos, iIndex, "%T %T", "TANK_FLOW", iClient, sTankPercent, "WITCH_FLOW", iClient, sWitchPercent);
+		UpdateReadyUpItem(ePos, iIndex, "%T %T", "TANK_FLOW", iClient, sTankPercent, "WITCH_FLOW", iClient, sWitchPercent);
 	} else if (sTankPercent[0] != '\0' ) {
-		UpdatePanelItem(ePos, iIndex, "%T", "TANK_FLOW", iClient, sTankPercent);
+		UpdateReadyUpItem(ePos, iIndex, "%T", "TANK_FLOW", iClient, sTankPercent);
 	} else if (sWitchPercent[0] != '\0') {
-		UpdatePanelItem(ePos, iIndex, "%T", "WITCH_FLOW", iClient, sWitchPercent);
+		UpdateReadyUpItem(ePos, iIndex, "%T", "WITCH_FLOW", iClient, sWitchPercent);
 	}
 
 	return Plugin_Stop;
