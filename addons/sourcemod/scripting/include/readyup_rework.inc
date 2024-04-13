@@ -26,17 +26,18 @@ enum PanelPos
 }
 
 /**
- *
+ * Returns the current state.
  */
 native ReadyupState GetReadyState();
 
 /**
- *
+ * Returns the current mode.
  */
 native Mode GetReadyMode();
 
 /**
- *
+ * Returns whether the player is marked as ready to play.
+ * In Mode_PlayerReady mode, returns true if the player's command is ready.
  */
 native bool IsClientReady(int iClient);
 
@@ -91,7 +92,7 @@ forward Action OnPrepareReadyUpItem(PanelPos ePos, int iClient, int iIndex);
 forward void OnRemoveReadyUpItem(PanelPos ePos, int iOldIndex, int iNewIndex);
 
 
-public SharedPlugin __pl_readyup =
+public SharedPlugin __pl_readyup_rework =
 {
 	name = "readyup_rework",
 	file = "readyup_rework.smx",
