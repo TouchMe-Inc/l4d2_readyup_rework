@@ -3,9 +3,9 @@
 
 #include <sourcemod>
 #include <sdktools>
-#include <colors>
 #include <left4dhooks>
 #include <nativevotes_rework>
+#include <colors>
 
 #undef REQUIRE_PLUGIN
 #include <caster_system>
@@ -13,11 +13,11 @@
 
 
 public Plugin myinfo = {
-	name = "ReadyupRework",
-	author = "CanadaRox, TouchMe",
+	name        = "ReadyupRework",
+	author      = "CanadaRox, TouchMe",
 	description = "The plugin allows you to control the moment the round starts",
-	version = "build0003",
-	url = "https://github.com/TouchMe-Inc/l4d2_readyup_rework"
+	version     = "build0003",
+	url         = "https://github.com/TouchMe-Inc/l4d2_readyup_rework"
 };
 
 
@@ -87,7 +87,7 @@ GlobalForward
 
 ConVar
 	g_cvGod = null,
-	g_cvSbStop = null,
+	g_cvPlayerStop = null,
 	g_cvSurvivorLimit = null,
 	g_cvMaxPlayerZombies = null,
 	g_cvInfinitePrimaryAmmo = null,
@@ -186,7 +186,9 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 		return APLRes_SilentFailure;
 	}
 
-	// Natives.
+	/*
+	 * Natives.
+	 */
 	CreateNative("GetReadyState", Native_GetReadyState);
 	CreateNative("GetReadyMode", Native_GetReadyMode);
 	CreateNative("IsClientReady", Native_IsClientReady);
@@ -197,13 +199,17 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	CreateNative("UpdateReadyUpItem", Native_UpdateReadyUpItem);
 	CreateNative("RemoveReadyUpItem", Native_RemoveReadyUpItem);
 
-	// Forwards.
-	g_fwdOnChangeReadyState = CreateGlobalForward("OnChangeReadyState", ET_Ignore, Param_Cell, Param_Cell);
-	g_fwdOnChangeClientReady = CreateGlobalForward("OnChangeClientReady", ET_Ignore, Param_Cell, Param_Cell);
+	/*
+	 * Forwards.
+	 */
+	g_fwdOnChangeReadyState   = CreateGlobalForward("OnChangeReadyState", ET_Ignore, Param_Cell, Param_Cell);
+	g_fwdOnChangeClientReady  = CreateGlobalForward("OnChangeClientReady", ET_Ignore, Param_Cell, Param_Cell);
 	g_fwdOnPrepareReadyUpItem = CreateGlobalForward("OnPrepareReadyUpItem", ET_Hook, Param_Cell, Param_Cell, Param_Cell);
-	g_fwdOnRemoveReadyUpItem = CreateGlobalForward("OnRemoveReadyUpItem", ET_Ignore, Param_Cell, Param_Cell);
+	g_fwdOnRemoveReadyUpItem  = CreateGlobalForward("OnRemoveReadyUpItem", ET_Ignore, Param_Cell, Param_Cell);
 
-	// Library.
+	/*
+	 * Library.
+	 */
 	RegPluginLibrary("readyup_rework");
 
 	return APLRes_Success;
@@ -370,7 +376,16 @@ public void OnPluginStart()
 {
 	LoadTranslations(TRANSLATION);
 
-	// ConVars.
+	/*
+	 * Find and Create ConVars.
+	 */
+	g_cvGod = FindConVar("god");
+	g_cvPlayerStop = FindConVar("nb_player_stop");
+	g_cvSurvivorLimit = FindConVar("survivor_limit");
+	g_cvMaxPlayerZombies = FindConVar("z_max_player_zombies");
+	g_cvInfinitePrimaryAmmo = FindConVar("sv_infinite_primary_ammo");
+	g_cvForceStartTime = FindConVar("versus_force_start_time");
+
 	g_cvMode = CreateConVar("sm_readyup_mode", "2", "Plugin operating mode (Values: 0 = Disabled, 1 = Auto start, 2 = Player ready, 3 = Team ready)", _, true, 0.0, true, 3.0);
 	g_cvDelay = CreateConVar("sm_readyup_delay", "3", "Number of seconds to count down before the round goes live", _, true, 0.0);
 	g_cvAutoStartDelay = CreateConVar("sm_readyup_autostart_delay", "20.0", "Number of seconds before forced automatic start (only sm_readyup_mode 1)", _, true, 0.0);
@@ -379,39 +394,43 @@ public void OnPluginStart()
 	g_cvSoundNotify = CreateConVar("sm_readyup_sound_notify", DEFAULT_NOTIFY_SOUND, "Path to the sound that is played when the client status changes");
 	g_cvSoundCountdown = CreateConVar("sm_readyup_sound_countdown", DEFAULT_COUNTDOWN_SOUND, "The sound that plays when a round goes on countdown");
 	g_cvSoundLive = CreateConVar("sm_readyup_sound_live", DEFAULT_LIVE_SOUND, "The sound that plays when a round goes live");
-	(g_cvGod = FindConVar("god"));
-	(g_cvSbStop = FindConVar("sb_stop"));
-	(g_cvSurvivorLimit = FindConVar("survivor_limit"));
-	(g_cvMaxPlayerZombies = FindConVar("z_max_player_zombies"));
-	(g_cvInfinitePrimaryAmmo = FindConVar("sv_infinite_primary_ammo"));
-	(g_cvForceStartTime = FindConVar("versus_force_start_time"));
 
+	/*
+	 * Hook ConVars.
+	 */
 	HookConVarChange(g_cvMode, OnModeChanged);
 	HookConVarChange(g_cvDelay, OnDelayChanged);
 	HookConVarChange(g_cvAutoStartDelay, OnAutoStartDelayChanged);
 	HookConVarChange(g_cvAfkDuration, OnAfkDurationChanged);
 
-	// Player Commands.
+	/*
+	 * Player Commands.
+	 */
 	RegConsoleCmd("sm_readyup", Cmd_TogglePanel, "Show/hide the readyup panel");
 	RegConsoleCmd("sm_return", Cmd_ReturnToSaferoom, "Return to a valid saferoom spawn if you get stuck during an unfrozen ready-up period");
 	RegConsoleCmd("sm_ready", Cmd_Ready, "Mark yourself as ready for the round to go live");
 	RegConsoleCmd("sm_r", Cmd_Ready, "Mark yourself as ready for the round to go live");
 	RegConsoleCmd("sm_unready", Cmd_Unready, "Mark yourself as not ready if you have set yourself as ready");
 	RegConsoleCmd("sm_nr", Cmd_Unready, "Mark yourself as not ready if you have set yourself as ready");
+	AddCommandListener(Vote_Callback, "Vote"); // Hook vote <KEY_F1> or <KEY_F2>.
 
-	// Hook vote <KEY_F1> or <KEY_F2>.
-	AddCommandListener(Vote_Callback, "Vote");
-
-	// Events.
+	/*
+	 * Events.
+	 */
 	HookEvent("round_start", Event_RoundStart, EventHookMode_Pre);
 	HookEvent("player_team", Event_PlayerTeam, EventHookMode_Post);
 
-	// Init
+	/*
+	 * Cache ConVars.
+	 */
 	g_eMode = view_as<Mode>(GetConVarInt(g_cvMode));
 	g_iDelay = GetConVarInt(g_cvDelay);
 	g_iAutoStartDelay = GetConVarInt(g_cvAutoStartDelay);
 	g_fAfkDuration = GetConVarFloat(g_cvAfkDuration);
 
+	/*
+	 * Init hud arrays.
+	 */
 	g_hPanelHeader = CreateArray(ByteCountToCells(64));
 	g_hPanelFooter = CreateArray(ByteCountToCells(64));
 }
@@ -423,7 +442,7 @@ public void OnPluginEnd()
 
 	SetConVarStringSilence(g_cvGod, "0");
 	SetConVarStringSilence(g_cvInfinitePrimaryAmmo, "0");
-	SetConVarStringSilence(g_cvSbStop, "0");
+	SetConVarStringSilence(g_cvPlayerStop, "0");
 }
 
 /**
@@ -463,7 +482,7 @@ public Action L4D_OnFirstSurvivorLeftSafeArea(int iClient)
 	{
 		SetConVarStringSilence(g_cvGod, "0");
 		SetConVarStringSilence(g_cvInfinitePrimaryAmmo, "0");
-		SetConVarStringSilence(g_cvSbStop, "0");
+		SetConVarStringSilence(g_cvPlayerStop, "0");
 
 		SetReadyState(ReadyupState_None);
 
@@ -492,7 +511,7 @@ void Event_RoundStart(Event event, const char[] sName, bool bDontBroadcast)
 	// ConVars.
 	SetConVarStringSilence(g_cvGod, "1");
 	SetConVarStringSilence(g_cvInfinitePrimaryAmmo, "1");
-	SetConVarStringSilence(g_cvSbStop, "1");
+	SetConVarStringSilence(g_cvPlayerStop, "1");
 
 	// Reset client ready status.
 	for (int iClient = 1; iClient <= MaxClients; iClient ++)
@@ -583,7 +602,7 @@ Action Timer_AutoStart(Handle timer)
 
 		SetConVarStringSilence(g_cvGod, "0");
 		SetConVarStringSilence(g_cvInfinitePrimaryAmmo, "0");
-		SetConVarStringSilence(g_cvSbStop, "0");
+		SetConVarStringSilence(g_cvPlayerStop, "0");
 
 		SetReadyState(ReadyupState_Ready);
 
@@ -694,7 +713,7 @@ Action Timer_Countdown(Handle timer)
 
 		SetConVarStringSilence(g_cvGod, "0");
 		SetConVarStringSilence(g_cvInfinitePrimaryAmmo, "0");
-		SetConVarStringSilence(g_cvSbStop, "0");
+		SetConVarStringSilence(g_cvPlayerStop, "0");
 
 		SetReadyState(ReadyupState_Ready);
 
@@ -754,18 +773,18 @@ Action Cmd_ReturnToSaferoom(int iClient, int iArgs)
  */
 Action Cmd_Ready(int iClient, int iArgs)
 {
-	if (!IsModeNeedClientAction()) {
+	if (!IsReadyStateInProgress() || !IsModeNeedClientAction()) {
 		return Plugin_Continue;
 	}
 
-	if (!IsReadyStateInProgress()) {
+	if (!iClient || !IsClientInGame(iClient)) {
 		return Plugin_Continue;
 	}
 
 	int iTeam = GetClientTeam(iClient);
 
 	if (!IsValidTeam(iTeam)) {
-		return Plugin_Continue;
+		return Plugin_Handled;
 	}
 
 	if (IsClientReady(iClient)) {
@@ -796,18 +815,18 @@ Action Cmd_Ready(int iClient, int iArgs)
  */
 Action Cmd_Unready(int iClient, int iArgs)
 {
-	if (!IsModeNeedClientAction()) {
+	if (!IsReadyStateInProgress() || !IsModeNeedClientAction()) {
 		return Plugin_Continue;
 	}
 
-	if (!IsReadyStateInProgress()) {
+	if (!iClient || !IsClientInGame(iClient)) {
 		return Plugin_Continue;
 	}
 
 	int iTeam = GetClientTeam(iClient);
 
 	if (!IsValidTeam(iTeam)) {
-		return Plugin_Continue;
+		return Plugin_Handled;
 	}
 
 	if (!IsClientReady(iClient)) {
@@ -985,7 +1004,7 @@ Panel BuildPanel(int iClient)
 			}
 
 			DrawPanelFormatText(hPanel, "%T", "PANEL_BLOCK_ITEM", iClient,
-				(IsClientReady(iPlayers[iTeam][iPlayer]) || g_eMode == Mode_AlwaysReady) ? sPanelPlayerReady : sPanelPlayerUnready,
+				(IsClientReady(iPlayers[iTeam][iPlayer]) || g_eMode == Mode_AlwaysReady || g_eMode == Mode_AutoStart) ? sPanelPlayerReady : sPanelPlayerUnready,
 				sPlayerAfk,
 				sPlayerName
 			);
