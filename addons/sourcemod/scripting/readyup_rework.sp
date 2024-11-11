@@ -13,11 +13,11 @@
 
 
 public Plugin myinfo = {
-	name        = "ReadyupRework",
-	author      = "CanadaRox, TouchMe",
-	description = "The plugin allows you to control the moment the round starts",
-	version     = "build0003",
-	url         = "https://github.com/TouchMe-Inc/l4d2_readyup_rework"
+    name        = "ReadyupRework",
+    author      = "CanadaRox, TouchMe",
+    description = "The plugin allows you to control the moment the round starts",
+    version     = "build0004",
+    url         = "https://github.com/TouchMe-Inc/l4d2_readyup_rework"
 };
 
 
@@ -54,67 +54,71 @@ public Plugin myinfo = {
 
 enum Mode
 {
-	Mode_AlwaysReady = 0,
-	Mode_AutoStart,
-	Mode_PlayerReady,
-	Mode_TeamReady
+    Mode_AlwaysReady = 0,
+    Mode_AutoStart,
+    Mode_PlayerReady,
+    Mode_TeamReady
 }
 
 enum ReadyupState
 {
-	ReadyupState_None = 0,
-	ReadyupState_UnReady,
-	ReadyupState_Countdown,
-	ReadyupState_Ready
+    ReadyupState_None = 0,
+    ReadyupState_UnReady,
+    ReadyupState_Countdown,
+    ReadyupState_Ready
+}
+
+enum ReadtupEffect // TODO
+{
+    ReadtupEffect_Invulnerability = (1 << 0),
+    ReadtupEffect_InfinityAmmo = (1 << 1)
 }
 
 enum PanelPos
 {
-	PanelPos_Header = 0,
-	PanelPos_Footer
+    PanelPos_Header = 0,
+    PanelPos_Footer
 }
 
-char PANEL_BLOCK_NAME[][] = {
-	"PANEL_SURVIVOR_TEAM", "PANEL_INFECTED_TEAM", "PANEL_CASTER_TEAM"
-};
-
 GlobalForward
-	g_fwdOnChangeReadyState = null,
-	g_fwdOnChangeClientReady = null,
-	g_fwdOnPrepareReadyUpItem = null,
-	g_fwdOnRemoveReadyUpItem = null
+    g_fwdOnChangeReadyState = null,
+    g_fwdOnChangeClientReady = null,
+    g_fwdOnPrepareReadyUpItem = null,
+    g_fwdOnRemoveReadyUpItem = null
 ;
 
 ConVar
-	g_cvGod = null,
-	g_cvPlayerStop = null,
-	g_cvSurvivorLimit = null,
-	g_cvMaxPlayerZombies = null,
-	g_cvInfinitePrimaryAmmo = null,
-	g_cvForceStartTime = null,
+    g_cvGod = null,
+    g_cvPlayerStop = null,
+    g_cvInfinitePrimaryAmmo = null,
+    g_cvForceStartTime = null,
 
-	g_cvMode = null,
-	g_cvDelay = null,
-	g_cvAutoStartDelay = null,
-	g_cvAfkDuration = null,
+    g_cvMode = null,
+    g_cvDelay = null,
+    g_cvAutoStartDelay = null,
+    g_cvAfkDuration = null,
 
-	g_cvSoundEnable = null,
-	g_cvSoundNotify = null,
-	g_cvSoundCountdown = null,
-	g_cvSoundLive = null
+    g_cvSoundEnable = null,
+    g_cvSoundNotify = null,
+    g_cvSoundCountdown = null,
+    g_cvSoundLive = null,
+
+    g_cvSpamCooldownInitial = null,
+    g_cvSpamCooldownIncrement = null,
+    g_cvMaxAttemptsBeforeIncrement = null
 ;
 
 char
-	g_sNotifySound[PLATFORM_MAX_PATH],
-	g_sCountdownSound[PLATFORM_MAX_PATH],
-	g_sLiveSound[PLATFORM_MAX_PATH]
+    g_sNotifySound[PLATFORM_MAX_PATH],
+    g_sCountdownSound[PLATFORM_MAX_PATH],
+    g_sLiveSound[PLATFORM_MAX_PATH]
 ;
 
 int
-	g_iDelay = 0,
-	g_iTimer = 0,
-	g_iAutoStartDelay = 0,
-	g_iAutoStartTimer = 0
+    g_iDelay = 0,
+    g_iTimer = 0,
+    g_iAutoStartDelay = 0,
+    g_iAutoStartTimer = 0
 ;
 
 float g_fAfkDuration = 0.0;
@@ -122,9 +126,16 @@ float g_fAfkDuration = 0.0;
 float g_fLastClientActivityTime[MAXPLAYERS + 1] = {0.0, ...};
 
 bool
-	g_bClientReady[MAXPLAYERS + 1],
-	g_bClientReadyUpVisible[MAXPLAYERS + 1]
+    g_bClientReady[MAXPLAYERS + 1],
+    g_bClientReadyUpVisible[MAXPLAYERS + 1]
 ;
+
+float g_fSpamCooldownInitial = 0.0;
+float g_fSpamCooldownIncrement = 0.0;
+int g_iMaxAttempts = 0;
+
+float g_fClientCommandSpamCooldown[MAXPLAYERS + 1];
+int g_iClientCommandSpamAttempts[MAXPLAYERS + 1];
 
 bool g_bCasterAvailable = false; /**< Caster System */
 
@@ -133,8 +144,8 @@ ReadyupState g_eReadyupState = ReadyupState_None;
 Mode g_eMode = Mode_AlwaysReady;
 
 Handle
-	g_hPanelHeader = null,
-	g_hPanelFooter = null
+    g_hPanelHeader = null,
+    g_hPanelFooter = null
 ;
 
 
@@ -142,7 +153,7 @@ Handle
   * Global event. Called when all plugins loaded.
   */
 public void OnAllPluginsLoaded() {
-	g_bCasterAvailable = LibraryExists(LIB_CASTER);
+    g_bCasterAvailable = LibraryExists(LIB_CASTER);
 }
 
 /**
@@ -152,9 +163,9 @@ public void OnAllPluginsLoaded() {
   */
 public void OnLibraryRemoved(const char[] sName)
 {
-	if (StrEqual(sName, LIB_CASTER)) {
-		g_bCasterAvailable = false;
-	}
+    if (StrEqual(sName, LIB_CASTER)) {
+        g_bCasterAvailable = false;
+    }
 }
 
 /**
@@ -164,9 +175,9 @@ public void OnLibraryRemoved(const char[] sName)
   */
 public void OnLibraryAdded(const char[] sName)
 {
-	if (StrEqual(sName, LIB_CASTER)) {
-		g_bCasterAvailable = true;
-	}
+    if (StrEqual(sName, LIB_CASTER)) {
+        g_bCasterAvailable = true;
+    }
 }
 
 /**
@@ -180,169 +191,169 @@ public void OnLibraryAdded(const char[] sName)
  */
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
-	if (GetEngineVersion() != Engine_Left4Dead2)
-	{
-		strcopy(error, err_max, "Plugin only supports Left 4 Dead 2.");
-		return APLRes_SilentFailure;
-	}
+    if (GetEngineVersion() != Engine_Left4Dead2)
+    {
+        strcopy(error, err_max, "Plugin only supports Left 4 Dead 2.");
+        return APLRes_SilentFailure;
+    }
 
-	/*
-	 * Natives.
-	 */
-	CreateNative("GetReadyState", Native_GetReadyState);
-	CreateNative("GetReadyMode", Native_GetReadyMode);
-	CreateNative("IsClientReady", Native_IsClientReady);
-	CreateNative("SetClientReady", Native_SetClientReady);
-	CreateNative("IsClientReadyUpVisible", Native_IsClientReadyUpVisible);
-	CreateNative("SetClientReadyUpVisible", Native_SetClientReadyUpVisible);
-	CreateNative("PushReadyUpItem", Native_PushReadyUpItem);
-	CreateNative("UpdateReadyUpItem", Native_UpdateReadyUpItem);
-	CreateNative("RemoveReadyUpItem", Native_RemoveReadyUpItem);
+    /*
+     * Natives.
+     */
+    CreateNative("GetReadyState", Native_GetReadyState);
+    CreateNative("GetReadyMode", Native_GetReadyMode);
+    CreateNative("IsClientReady", Native_IsClientReady);
+    CreateNative("SetClientReady", Native_SetClientReady);
+    CreateNative("IsClientReadyUpVisible", Native_IsClientReadyUpVisible);
+    CreateNative("SetClientReadyUpVisible", Native_SetClientReadyUpVisible);
+    CreateNative("PushReadyUpItem", Native_PushReadyUpItem);
+    CreateNative("UpdateReadyUpItem", Native_UpdateReadyUpItem);
+    CreateNative("RemoveReadyUpItem", Native_RemoveReadyUpItem);
 
-	/*
-	 * Forwards.
-	 */
-	g_fwdOnChangeReadyState   = CreateGlobalForward("OnChangeReadyState", ET_Ignore, Param_Cell, Param_Cell);
-	g_fwdOnChangeClientReady  = CreateGlobalForward("OnChangeClientReady", ET_Ignore, Param_Cell, Param_Cell);
-	g_fwdOnPrepareReadyUpItem = CreateGlobalForward("OnPrepareReadyUpItem", ET_Hook, Param_Cell, Param_Cell, Param_Cell);
-	g_fwdOnRemoveReadyUpItem  = CreateGlobalForward("OnRemoveReadyUpItem", ET_Ignore, Param_Cell, Param_Cell);
+    /*
+     * Forwards.
+     */
+    g_fwdOnChangeReadyState   = CreateGlobalForward("OnChangeReadyState", ET_Ignore, Param_Cell, Param_Cell);
+    g_fwdOnChangeClientReady  = CreateGlobalForward("OnChangeClientReady", ET_Ignore, Param_Cell, Param_Cell);
+    g_fwdOnPrepareReadyUpItem = CreateGlobalForward("OnPrepareReadyUpItem", ET_Hook, Param_Cell, Param_Cell, Param_Cell);
+    g_fwdOnRemoveReadyUpItem  = CreateGlobalForward("OnRemoveReadyUpItem", ET_Ignore, Param_Cell, Param_Cell);
 
-	/*
-	 * Library.
-	 */
-	RegPluginLibrary("readyup_rework");
+    /*
+     * Library.
+     */
+    RegPluginLibrary("readyup_rework");
 
-	return APLRes_Success;
+    return APLRes_Success;
 }
 
 any Native_GetReadyState(Handle hPlugin, int iParams) {
-	return g_eReadyupState;
+    return g_eReadyupState;
 }
 
 any Native_GetReadyMode(Handle hPlugin, int iParams) {
-	return g_eMode;
+    return g_eMode;
 }
 
 any Native_IsClientReady(Handle hPlugin, int iParams)
 {
-	int iClient = GetNativeCell(1);
+    int iClient = GetNativeCell(1);
 
-	if (!IsValidClient(iClient)) {
-		return ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d", iClient);
-	}
+    if (!IsValidClient(iClient)) {
+        return ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d", iClient);
+    }
 
-	if (!IsClientInGame(iClient)) {
-		return ThrowNativeError(SP_ERROR_NATIVE, "Client %d is not in game", iClient);
-	}
+    if (!IsClientInGame(iClient)) {
+        return ThrowNativeError(SP_ERROR_NATIVE, "Client %d is not in game", iClient);
+    }
 
-	return IsClientReady(iClient);
+    return IsClientReady(iClient);
 }
 
 any Native_SetClientReady(Handle hPlugin, int iParams)
 {
-	int iClient = GetNativeCell(1);
+    int iClient = GetNativeCell(1);
 
-	if (!IsValidClient(iClient)) {
-		return ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d", iClient);
-	}
+    if (!IsValidClient(iClient)) {
+        return ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d", iClient);
+    }
 
-	if (!IsClientInGame(iClient)) {
-		return ThrowNativeError(SP_ERROR_NATIVE, "Client %d is not in game", iClient);
-	}
+    if (!IsClientInGame(iClient)) {
+        return ThrowNativeError(SP_ERROR_NATIVE, "Client %d is not in game", iClient);
+    }
 
-	bool bReady = GetNativeCell(2);
+    bool bReady = GetNativeCell(2);
 
-	return SetClientReady(iClient, bReady);
+    return SetClientReady(iClient, bReady);
 }
 
 any Native_IsClientReadyUpVisible(Handle hPlugin, int iParams)
 {
-	int iClient = GetNativeCell(1);
+    int iClient = GetNativeCell(1);
 
-	if (!IsValidClient(iClient)) {
-		return ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d", iClient);
-	}
+    if (!IsValidClient(iClient)) {
+        return ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d", iClient);
+    }
 
-	if (!IsClientInGame(iClient)) {
-		return ThrowNativeError(SP_ERROR_NATIVE, "Client %d is not in game", iClient);
-	}
+    if (!IsClientInGame(iClient)) {
+        return ThrowNativeError(SP_ERROR_NATIVE, "Client %d is not in game", iClient);
+    }
 
-	return IsClientReadyUpVisible(iClient);
+    return IsClientReadyUpVisible(iClient);
 }
 
 any Native_SetClientReadyUpVisible(Handle hPlugin, int iParams)
 {
-	int iClient = GetNativeCell(1);
+    int iClient = GetNativeCell(1);
 
-	if (!IsValidClient(iClient)) {
-		return ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d", iClient);
-	}
+    if (!IsValidClient(iClient)) {
+        return ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d", iClient);
+    }
 
-	if (!IsClientInGame(iClient)) {
-		return ThrowNativeError(SP_ERROR_NATIVE, "Client %d is not in game", iClient);
-	}
+    if (!IsClientInGame(iClient)) {
+        return ThrowNativeError(SP_ERROR_NATIVE, "Client %d is not in game", iClient);
+    }
 
-	bool bVisible = GetNativeCell(2);
+    bool bVisible = GetNativeCell(2);
 
-	SetClientReadyUpVisible(iClient, bVisible);
+    SetClientReadyUpVisible(iClient, bVisible);
 
-	return 0;
+    return 0;
 }
 
 any Native_PushReadyUpItem(Handle hPlugin, int iParams)
 {
-	PanelPos ePos = GetNativeCell(1);
+    PanelPos ePos = GetNativeCell(1);
 
-	Handle hItems = (ePos == PanelPos_Header) ? g_hPanelHeader : g_hPanelFooter;
+    Handle hItems = (ePos == PanelPos_Header) ? g_hPanelHeader : g_hPanelFooter;
 
-	char sBuffer[64]; FormatNativeString(0, 2, 3, sizeof(sBuffer), _, sBuffer);
+    char sBuffer[64]; FormatNativeString(0, 2, 3, sizeof(sBuffer), _, sBuffer);
 
-	return PushArrayString(hItems, sBuffer);
+    return PushArrayString(hItems, sBuffer);
 }
 
 any Native_UpdateReadyUpItem(Handle hPlugin, int iParams)
 {
-	PanelPos ePos = GetNativeCell(1);
+    PanelPos ePos = GetNativeCell(1);
 
-	Handle hItems = (ePos == PanelPos_Header) ? g_hPanelHeader : g_hPanelFooter;
+    Handle hItems = (ePos == PanelPos_Header) ? g_hPanelHeader : g_hPanelFooter;
 
-	int iTargetIndex = GetNativeCell(2);
+    int iTargetIndex = GetNativeCell(2);
 
-	int iItemCount = GetArraySize(hItems);
+    int iItemCount = GetArraySize(hItems);
 
-	if (iTargetIndex >= iItemCount) {
-		return ThrowNativeError(SP_ERROR_NATIVE, "Array index out bound");
-	}
+    if (iTargetIndex >= iItemCount) {
+        return ThrowNativeError(SP_ERROR_NATIVE, "Array index out bound");
+    }
 
-	char sBuffer[64]; FormatNativeString(0, 3, 4, sizeof(sBuffer), _, sBuffer);
+    char sBuffer[64]; FormatNativeString(0, 3, 4, sizeof(sBuffer), _, sBuffer);
 
-	SetArrayString(hItems, iTargetIndex, sBuffer);
+    SetArrayString(hItems, iTargetIndex, sBuffer);
 
-	return 0;
+    return 0;
 }
 
 any Native_RemoveReadyUpItem(Handle hPlugin, int iParams)
 {
-	PanelPos ePos = GetNativeCell(1);
+    PanelPos ePos = GetNativeCell(1);
 
-	Handle hItems = (ePos == PanelPos_Header) ? g_hPanelHeader : g_hPanelFooter;
+    Handle hItems = (ePos == PanelPos_Header) ? g_hPanelHeader : g_hPanelFooter;
 
-	int iTargetIndex = GetNativeCell(2);
+    int iTargetIndex = GetNativeCell(2);
 
-	int iItemCount = GetArraySize(hItems);
+    int iItemCount = GetArraySize(hItems);
 
-	if (iTargetIndex >= iItemCount) {
-		return ThrowNativeError(SP_ERROR_NATIVE, "Array index out bound");
-	}
+    if (iTargetIndex >= iItemCount) {
+        return ThrowNativeError(SP_ERROR_NATIVE, "Array index out bound");
+    }
 
-	for (int iIndex = iTargetIndex + 1; iIndex < iItemCount; iIndex ++)
-	{
-		ExecuteForward_OnRemoveReadyUpItem(ePos, iIndex, iIndex - 1);
-	}
+    for (int iIndex = iTargetIndex + 1; iIndex < iItemCount; iIndex ++)
+    {
+        ExecuteForward_OnRemoveReadyUpItem(ePos, iIndex, iIndex - 1);
+    }
 
-	RemoveFromArray(hItems, iTargetIndex);
+    RemoveFromArray(hItems, iTargetIndex);
 
-	return 0;
+    return 0;
 }
 
 /**
@@ -350,23 +361,23 @@ any Native_RemoveReadyUpItem(Handle hPlugin, int iParams)
  */
 public void OnMapStart()
 {
-	GetConVarString(g_cvSoundNotify, g_sNotifySound, sizeof(g_sNotifySound));
-	if (!IsSoundExists(g_sNotifySound)) {
-		strcopy(g_sNotifySound, sizeof(g_sNotifySound), DEFAULT_NOTIFY_SOUND);
-	}
-	PrecacheSound(g_sNotifySound);
+    GetConVarString(g_cvSoundNotify, g_sNotifySound, sizeof(g_sNotifySound));
+    if (!IsSoundExists(g_sNotifySound)) {
+        strcopy(g_sNotifySound, sizeof(g_sNotifySound), DEFAULT_NOTIFY_SOUND);
+    }
+    PrecacheSound(g_sNotifySound);
 
-	GetConVarString(g_cvSoundCountdown, g_sCountdownSound, sizeof(g_sCountdownSound));
-	if (!IsSoundExists(g_sCountdownSound)) {
-		strcopy(g_sCountdownSound, sizeof(g_sCountdownSound), DEFAULT_COUNTDOWN_SOUND);
-	}
-	PrecacheSound(g_sCountdownSound);
+    GetConVarString(g_cvSoundCountdown, g_sCountdownSound, sizeof(g_sCountdownSound));
+    if (!IsSoundExists(g_sCountdownSound)) {
+        strcopy(g_sCountdownSound, sizeof(g_sCountdownSound), DEFAULT_COUNTDOWN_SOUND);
+    }
+    PrecacheSound(g_sCountdownSound);
 
-	GetConVarString(g_cvSoundLive, g_sLiveSound, sizeof(g_sLiveSound));
-	if (!IsSoundExists(g_sLiveSound)) {
-		strcopy(g_sLiveSound, sizeof(g_sLiveSound), DEFAULT_LIVE_SOUND);
-	}
-	PrecacheSound(g_sLiveSound);
+    GetConVarString(g_cvSoundLive, g_sLiveSound, sizeof(g_sLiveSound));
+    if (!IsSoundExists(g_sLiveSound)) {
+        strcopy(g_sLiveSound, sizeof(g_sLiveSound), DEFAULT_LIVE_SOUND);
+    }
+    PrecacheSound(g_sLiveSound);
 }
 
 /**
@@ -374,103 +385,138 @@ public void OnMapStart()
  */
 public void OnPluginStart()
 {
-	LoadTranslations(TRANSLATION);
+    LoadTranslations(TRANSLATION);
 
-	/*
-	 * Find and Create ConVars.
-	 */
-	g_cvGod = FindConVar("god");
-	g_cvPlayerStop = FindConVar("nb_player_stop");
-	g_cvSurvivorLimit = FindConVar("survivor_limit");
-	g_cvMaxPlayerZombies = FindConVar("z_max_player_zombies");
-	g_cvInfinitePrimaryAmmo = FindConVar("sv_infinite_primary_ammo");
-	g_cvForceStartTime = FindConVar("versus_force_start_time");
+    /*
+     * Find and Create ConVars.
+     */
+    g_cvGod = FindConVar("god");
+    g_cvPlayerStop = FindConVar("nb_player_stop");
+    g_cvInfinitePrimaryAmmo = FindConVar("sv_infinite_primary_ammo");
+    g_cvForceStartTime = FindConVar("versus_force_start_time");
 
-	g_cvMode = CreateConVar("sm_readyup_mode", "2", "Plugin operating mode (Values: 0 = Disabled, 1 = Auto start, 2 = Player ready, 3 = Team ready)", _, true, 0.0, true, 3.0);
-	g_cvDelay = CreateConVar("sm_readyup_delay", "3", "Number of seconds to count down before the round goes live", _, true, 0.0);
-	g_cvAutoStartDelay = CreateConVar("sm_readyup_autostart_delay", "20.0", "Number of seconds before forced automatic start (only sm_readyup_mode 1)", _, true, 0.0);
-	g_cvAfkDuration = CreateConVar("sm_readyup_afk_duration", "15.0", "Number of seconds since the player's last activity to count his afk", _, true, 1.0);
-	g_cvSoundEnable = CreateConVar("sm_readyup_sound_enable", "1", "Enable sounds played to clients", _, true, 0.0, true, 1.0);
-	g_cvSoundNotify = CreateConVar("sm_readyup_sound_notify", DEFAULT_NOTIFY_SOUND, "Path to the sound that is played when the client status changes");
-	g_cvSoundCountdown = CreateConVar("sm_readyup_sound_countdown", DEFAULT_COUNTDOWN_SOUND, "The sound that plays when a round goes on countdown");
-	g_cvSoundLive = CreateConVar("sm_readyup_sound_live", DEFAULT_LIVE_SOUND, "The sound that plays when a round goes live");
+    g_cvSoundEnable = CreateConVar("sm_readyup_sound_enable", "1", "Enable sounds played to clients", _, true, 0.0, true, 1.0);
+    g_cvSoundNotify = CreateConVar("sm_readyup_sound_notify", DEFAULT_NOTIFY_SOUND, "Path to the sound that is played when the client status changes");
+    g_cvSoundCountdown = CreateConVar("sm_readyup_sound_countdown", DEFAULT_COUNTDOWN_SOUND, "The sound that plays when a round goes on countdown");
+    g_cvSoundLive = CreateConVar("sm_readyup_sound_live", DEFAULT_LIVE_SOUND, "The sound that plays when a round goes live");
 
-	/*
-	 * Hook ConVars.
-	 */
-	HookConVarChange(g_cvMode, OnModeChanged);
-	HookConVarChange(g_cvDelay, OnDelayChanged);
-	HookConVarChange(g_cvAutoStartDelay, OnAutoStartDelayChanged);
-	HookConVarChange(g_cvAfkDuration, OnAfkDurationChanged);
+    g_cvMode = CreateConVar("sm_readyup_mode", "2", "Plugin operating mode (Values: 0 = Disabled, 1 = Auto start, 2 = Player ready, 3 = Team ready)", _, true, 0.0, true, 3.0);
+    g_cvDelay = CreateConVar("sm_readyup_delay", "3", "Number of seconds to count down before the round goes live", _, true, 0.0);
+    g_cvAutoStartDelay = CreateConVar("sm_readyup_autostart_delay", "20.0", "Number of seconds before forced automatic start (only sm_readyup_mode 1)", _, true, 0.0);
+    g_cvAfkDuration = CreateConVar("sm_readyup_afk_duration", "15.0", "Number of seconds since the player's last activity to count his afk", _, true, 1.0);
 
-	/*
-	 * Player Commands.
-	 */
-	RegConsoleCmd("sm_readyup", Cmd_TogglePanel, "Show/hide the readyup panel");
-	RegConsoleCmd("sm_return", Cmd_ReturnToSaferoom, "Return to a valid saferoom spawn if you get stuck during an unfrozen ready-up period");
-	RegConsoleCmd("sm_ready", Cmd_Ready, "Mark yourself as ready for the round to go live");
-	RegConsoleCmd("sm_r", Cmd_Ready, "Mark yourself as ready for the round to go live");
-	RegConsoleCmd("sm_unready", Cmd_Unready, "Mark yourself as not ready if you have set yourself as ready");
-	RegConsoleCmd("sm_nr", Cmd_Unready, "Mark yourself as not ready if you have set yourself as ready");
-	AddCommandListener(Vote_Callback, "Vote"); // Hook vote <KEY_F1> or <KEY_F2>.
+    g_cvSpamCooldownInitial = CreateConVar("sm_readyup_spam_cd_init", "2.0", "Initial cooldown time in seconds", _, true, 0.0);
+    g_cvSpamCooldownIncrement = CreateConVar("sm_readyup_spam_cd_inc", "1.0", "Cooldown increment time in seconds", _, true,  0.0);
+    g_cvMaxAttemptsBeforeIncrement = CreateConVar("sm_readyup_spam_attempts_before_inc", "1", "Maximum number of attempts before increasing cooldown", _, true, 10.0);
 
-	/*
-	 * Events.
-	 */
-	HookEvent("round_start", Event_RoundStart, EventHookMode_Pre);
-	HookEvent("player_team", Event_PlayerTeam, EventHookMode_Post);
+    /*
+     * Register ConVar change callbacks.
+     */
+    HookConVarChange(g_cvMode, OnModeChanged);
+    HookConVarChange(g_cvDelay, OnDelayChanged);
+    HookConVarChange(g_cvAutoStartDelay, OnAutoStartDelayChanged);
+    HookConVarChange(g_cvAfkDuration, OnAfkDurationChanged);
 
-	/*
-	 * Cache ConVars.
-	 */
-	g_eMode = view_as<Mode>(GetConVarInt(g_cvMode));
-	g_iDelay = GetConVarInt(g_cvDelay);
-	g_iAutoStartDelay = GetConVarInt(g_cvAutoStartDelay);
-	g_fAfkDuration = GetConVarFloat(g_cvAfkDuration);
+    HookConVarChange(g_cvSpamCooldownInitial, OnInitialSpamCooldownChanged);
+    HookConVarChange(g_cvSpamCooldownIncrement, OnSpamCooldownIncrementChanged);
+    HookConVarChange(g_cvMaxAttemptsBeforeIncrement, OnMaxAttemptsBeforeIncementChanged);
 
-	/*
-	 * Init hud arrays.
-	 */
-	g_hPanelHeader = CreateArray(ByteCountToCells(64));
-	g_hPanelFooter = CreateArray(ByteCountToCells(64));
+    /*
+     * Player Commands.
+     */
+    RegConsoleCmd("sm_readyup", Cmd_TogglePanel, "Show/hide the readyup panel");
+    RegConsoleCmd("sm_return", Cmd_ReturnToSaferoom, "Return to a valid saferoom spawn if you get stuck during an unfrozen ready-up period");
+    RegConsoleCmd("sm_ready", Cmd_Ready, "Mark yourself as ready for the round to go live");
+    RegConsoleCmd("sm_r", Cmd_Ready, "Mark yourself as ready for the round to go live");
+    RegConsoleCmd("sm_unready", Cmd_Unready, "Mark yourself as not ready if you have set yourself as ready");
+    RegConsoleCmd("sm_nr", Cmd_Unready, "Mark yourself as not ready if you have set yourself as ready");
+    AddCommandListener(Vote_Callback, "Vote"); // Hook vote <KEY_F1> or <KEY_F2>.
+
+    /*
+     * Events.
+     */
+    HookEvent("round_start", Event_RoundStart, EventHookMode_Pre);
+    HookEvent("player_team", Event_PlayerTeam, EventHookMode_Post);
+
+    /*
+     * Initialize variables with ConVar values.
+     */
+    g_eMode = view_as<Mode>(GetConVarInt(g_cvMode));
+    g_iDelay = GetConVarInt(g_cvDelay);
+    g_iAutoStartDelay = GetConVarInt(g_cvAutoStartDelay);
+    g_fAfkDuration = GetConVarFloat(g_cvAfkDuration);
+
+    g_fSpamCooldownInitial = GetConVarFloat(g_cvSpamCooldownInitial);
+    g_fSpamCooldownIncrement = GetConVarFloat(g_cvSpamCooldownIncrement);
+    g_iMaxAttempts = GetConVarInt(g_cvMaxAttemptsBeforeIncrement);
+
+    /*
+     * Init hud arrays.
+     */
+    g_hPanelHeader = CreateArray(ByteCountToCells(64));
+    g_hPanelFooter = CreateArray(ByteCountToCells(64));
 }
 
+/**
+ *
+ */
 public void OnPluginEnd()
 {
-	EnableForceStartTime();
-	ReturnSurvivorToSaferoom();
+    EnableForceStartTime();
+    ReturnSurvivorToSaferoom();
 
-	SetConVarStringSilence(g_cvGod, "0");
-	SetConVarStringSilence(g_cvInfinitePrimaryAmmo, "0");
-	SetConVarStringSilence(g_cvPlayerStop, "0");
+    SetConVarStringSilence(g_cvGod, "0");
+    SetConVarStringSilence(g_cvInfinitePrimaryAmmo, "0");
+    SetConVarStringSilence(g_cvPlayerStop, "0");
 }
 
 /**
  *
  */
 void OnModeChanged(ConVar convar, const char[] sOldValue, const char[] sNewValue) {
-	g_eMode = view_as<Mode>(GetConVarInt(convar));
+    g_eMode = view_as<Mode>(GetConVarInt(convar));
 }
 
 /**
  *
  */
 void OnDelayChanged(ConVar convar, const char[] sOldValue, const char[] sNewValue) {
-	g_iDelay = GetConVarInt(convar);
+    g_iDelay = GetConVarInt(convar);
 }
 
 /**
  *
  */
 void OnAutoStartDelayChanged(ConVar convar, const char[] sOldValue, const char[] sNewValue) {
-	g_iAutoStartDelay = GetConVarInt(convar);
+    g_iAutoStartDelay = GetConVarInt(convar);
 }
 
 /**
  *
  */
 void OnAfkDurationChanged(ConVar convar, const char[] sOldValue, const char[] sNewValue) {
-	g_fAfkDuration = GetConVarFloat(convar);
+    g_fAfkDuration = GetConVarFloat(convar);
+}
+
+/**
+ *
+ */
+void OnInitialSpamCooldownChanged(ConVar convar, const char[] oldValue, const char[] newValue) {
+    g_fSpamCooldownInitial = GetConVarFloat(convar);
+}
+
+/**
+ *
+ */
+void OnSpamCooldownIncrementChanged(ConVar convar, const char[] oldValue, const char[] newValue) {
+    g_fSpamCooldownIncrement = GetConVarFloat(convar);
+}
+
+/**
+ *
+ */
+void OnMaxAttemptsBeforeIncementChanged(ConVar convar, const char[] oldValue, const char[] newValue) {
+    g_iMaxAttempts = GetConVarInt(convar);
 }
 
 /**
@@ -478,27 +524,22 @@ void OnAfkDurationChanged(ConVar convar, const char[] sOldValue, const char[] sN
  */
 public Action L4D_OnFirstSurvivorLeftSafeArea(int iClient)
 {
-	if (g_eMode == Mode_AlwaysReady)
-	{
-		SetConVarStringSilence(g_cvGod, "0");
-		SetConVarStringSilence(g_cvInfinitePrimaryAmmo, "0");
-		SetConVarStringSilence(g_cvPlayerStop, "0");
+    if (IsReadyStateInProgress())
+    {
+        ReturnClientToSaferoom(iClient);
 
-		SetReadyState(ReadyupState_None);
+        return Plugin_Handled;
+    }
 
-		return Plugin_Continue;
-	}
+    EnableForceStartTime();
 
-	if (!IsReadyStateInProgress())
-	{
-		SetReadyState(ReadyupState_None);
+    SetConVarStringSilence(g_cvGod, "0");
+    SetConVarStringSilence(g_cvInfinitePrimaryAmmo, "0");
+    SetConVarStringSilence(g_cvPlayerStop, "0");
 
-		return Plugin_Continue;
-	}
+    SetReadyState(ReadyupState_None);
 
-	ReturnClientToSaferoom(iClient);
-
-	return Plugin_Handled;
+    return Plugin_Continue;
 }
 
 /**
@@ -506,33 +547,36 @@ public Action L4D_OnFirstSurvivorLeftSafeArea(int iClient)
  */
 void Event_RoundStart(Event event, const char[] sName, bool bDontBroadcast)
 {
-	DisableForceStartTime();
+    DisableForceStartTime();
 
-	// ConVars.
-	SetConVarStringSilence(g_cvGod, "1");
-	SetConVarStringSilence(g_cvInfinitePrimaryAmmo, "1");
-	SetConVarStringSilence(g_cvPlayerStop, "1");
+    // ConVars.
+    SetConVarStringSilence(g_cvGod, "1");
+    SetConVarStringSilence(g_cvInfinitePrimaryAmmo, "1");
+    SetConVarStringSilence(g_cvPlayerStop, "1");
 
-	// Reset client ready status.
-	for (int iClient = 1; iClient <= MaxClients; iClient ++)
-	{
-		g_bClientReady[iClient] = false;
-		g_bClientReadyUpVisible[iClient] = true;
-	}
+    // Reset client ready status.
+    for (int iClient = 1; iClient <= MaxClients; iClient ++)
+    {
+        g_bClientReady[iClient] = false;
+        g_bClientReadyUpVisible[iClient] = true;
+    }
 
-	// Vars.
-	SetReadyState(ReadyupState_UnReady);
+    switch (g_eMode)
+    {
+        case Mode_AutoStart: {
+            SetReadyState(ReadyupState_Countdown);
 
-	// Show panel.
-	CreateTimer(1.0, Timer_UpdatePanel, .flags = TIMER_FLAG_NO_MAPCHANGE | TIMER_REPEAT);
+            g_iAutoStartTimer = g_iAutoStartDelay;
+            CreateTimer(1.0, Timer_AutoStart, .flags = TIMER_FLAG_NO_MAPCHANGE | TIMER_REPEAT);
+        }
 
-	if (g_eMode == Mode_AutoStart)
-	{
-		SetReadyState(ReadyupState_Countdown);
+        case Mode_AlwaysReady: SetReadyState(ReadyupState_Ready);
 
-		g_iAutoStartTimer = g_iAutoStartDelay;
-		CreateTimer(1.0, Timer_AutoStart, .flags = TIMER_FLAG_NO_MAPCHANGE | TIMER_REPEAT);
-	}
+        default: SetReadyState(ReadyupState_UnReady);
+    }
+
+    // Show panel.
+    CreateTimer(1.0, Timer_UpdatePanel, .flags = TIMER_FLAG_NO_MAPCHANGE | TIMER_REPEAT);
 }
 
 /**
@@ -540,34 +584,34 @@ void Event_RoundStart(Event event, const char[] sName, bool bDontBroadcast)
  */
 Action Timer_UpdatePanel(Handle timer)
 {
-	if (!IsReadyStateInProgress()) {
-		return Plugin_Stop;
-	}
+    if (g_eReadyupState == ReadyupState_None) {
+        return Plugin_Stop;
+    }
 
-	if (NativeVotes_IsVoteInProgress()) {
-		return Plugin_Continue;
-	}
+    if (NativeVotes_IsVoteInProgress()) {
+        return Plugin_Continue;
+    }
 
-	for (int iClient = 1; iClient <= MaxClients; iClient ++)
-	{
-		if (!IsClientInGame(iClient)
-		|| IsFakeClient(iClient)
-		|| !IsClientReadyUpVisible(iClient)) {
-			continue;
-		}
+    for (int iClient = 1; iClient <= MaxClients; iClient ++)
+    {
+        if (!IsClientInGame(iClient)
+        || IsFakeClient(iClient)
+        || !IsClientReadyUpVisible(iClient)) {
+            continue;
+        }
 
-		switch (GetClientMenu(iClient)) {
-			case MenuSource_External, MenuSource_Normal: continue;
-		}
+        switch (GetClientMenu(iClient)) {
+            case MenuSource_External, MenuSource_Normal: continue;
+        }
 
-		Panel hPanel = BuildPanel(iClient);
+        Panel hPanel = BuildPanel(iClient);
 
-		SendPanelToClient(hPanel, iClient, DummyHandler, 1);
+        SendPanelToClient(hPanel, iClient, DummyHandler, 1);
 
-		CloseHandle(hPanel);
-	}
+        CloseHandle(hPanel);
+    }
 
-	return Plugin_Continue;
+    return Plugin_Continue;
 }
 
 /**
@@ -575,43 +619,33 @@ Action Timer_UpdatePanel(Handle timer)
  */
 Action Timer_AutoStart(Handle timer)
 {
-	if (!IsReadyStateCountdown()) {
-		return Plugin_Stop;
-	}
+    if (!IsReadyState(ReadyupState_Countdown)) {
+        return Plugin_Stop;
+    }
 
-	if (IsEmptyServer())
-	{
-		g_iAutoStartTimer = g_iAutoStartDelay;
+    if (IsEmptyServer())
+    {
+        g_iAutoStartTimer = g_iAutoStartDelay;
 
-		return Plugin_Continue;
-	}
+        return Plugin_Continue;
+    }
 
-	if (IsAnyPlayerLoading())
-	{
-		PrintHintTextToAll("%t", "AUTOSTART_WAIT_LOADING_PLAYERS");
-		return Plugin_Continue;
-	}
+    if (IsAnyPlayerLoading()) {
+        return Plugin_Continue;
+    }
 
-	if (g_iAutoStartTimer <= 0)
-	{
-		PrintHintTextToAll("%t", "AUTOSTART_COUNTDOWN_END");
+    if (g_iAutoStartTimer <= 0)
+    {
+        PlayLiveSound();
 
-		PlayLiveSound();
-		EnableForceStartTime();
-		ReturnSurvivorToSaferoom();
+        SetReadyState(ReadyupState_Ready);
 
-		SetConVarStringSilence(g_cvGod, "0");
-		SetConVarStringSilence(g_cvInfinitePrimaryAmmo, "0");
-		SetConVarStringSilence(g_cvPlayerStop, "0");
+        return Plugin_Stop;
+    }
 
-		SetReadyState(ReadyupState_Ready);
+    g_iAutoStartTimer --;
 
-		return Plugin_Stop;
-	}
-
-	PrintHintTextToAll("%t", "AUTOSTART_COUNTDOWN", g_iAutoStartTimer --);
-
-	return Plugin_Continue;
+    return Plugin_Continue;
 }
 
 /**
@@ -619,33 +653,33 @@ Action Timer_AutoStart(Handle timer)
  */
 Action Event_PlayerTeam(Event event, const char[] sName, bool bDontBroadcast)
 {
-	if (!IsModeNeedClientAction()) {
-		return Plugin_Continue;
-	}
+    if (!IsModeNeedClientAction()) {
+        return Plugin_Continue;
+    }
 
-	if (!IsReadyStateInProgress()) {
-		return Plugin_Continue;
-	}
+    if (!IsReadyStateInProgress()) {
+        return Plugin_Continue;
+    }
 
-	int iClient = GetClientOfUserId(GetEventInt(event, "userid"));
+    int iClient = GetClientOfUserId(GetEventInt(event, "userid"));
 
-	if (!iClient || IsFakeClient(iClient)) {
-		return Plugin_Continue;
-	}
+    if (!iClient || IsFakeClient(iClient)) {
+        return Plugin_Continue;
+    }
 
-	int iOldTeam = GetEventInt(event, "oldteam");
+    int iOldTeam = GetEventInt(event, "oldteam");
 
-	char sPlayerName[MAX_NAME_LENGTH];
-	GetClientNameFixed(iClient, sPlayerName, sizeof(sPlayerName), 18);
+    char sPlayerName[MAX_NAME_LENGTH];
+    GetClientNameFixed(iClient, sPlayerName, sizeof(sPlayerName), 18);
 
-	DataPack hPack = CreateDataPack();
-	WritePackCell(hPack, iClient);
-	WritePackCell(hPack, iOldTeam);
-	WritePackString(hPack, sPlayerName);
+    DataPack hPack = CreateDataPack();
+    WritePackCell(hPack, iClient);
+    WritePackCell(hPack, iOldTeam);
+    WritePackString(hPack, sPlayerName);
 
-	CreateTimer(0.1, Timer_PlayerTeam, hPack, TIMER_DATA_HNDL_CLOSE | TIMER_FLAG_NO_MAPCHANGE);
+    CreateTimer(0.1, Timer_PlayerTeam, hPack, TIMER_DATA_HNDL_CLOSE | TIMER_FLAG_NO_MAPCHANGE);
 
-	return Plugin_Continue;
+    return Plugin_Continue;
 }
 
 /**
@@ -653,45 +687,45 @@ Action Event_PlayerTeam(Event event, const char[] sName, bool bDontBroadcast)
  */
 Action Timer_PlayerTeam(Handle hTimer, DataPack hPack)
 {
-	if (!IsReadyStateInProgress()) {
-		return Plugin_Stop;
-	}
+    if (!IsReadyStateInProgress()) {
+        return Plugin_Stop;
+    }
 
-	ResetPack(hPack);
+    ResetPack(hPack);
 
-	int iClient = ReadPackCell(hPack);
-	int iOldTeam = ReadPackCell(hPack);
-	int iNewTeam = IsClientConnected(iClient) ? GetClientTeam(iClient) : TEAM_NONE;
+    int iClient = ReadPackCell(hPack);
+    int iOldTeam = ReadPackCell(hPack);
+    int iNewTeam = IsClientConnected(iClient) ? GetClientTeam(iClient) : TEAM_NONE;
 
-	char sPlayerName[MAX_NAME_LENGTH];
-	ReadPackString(hPack, sPlayerName, sizeof(sPlayerName));
+    char sPlayerName[MAX_NAME_LENGTH];
+    ReadPackString(hPack, sPlayerName, sizeof(sPlayerName));
 
-	if (IsValidTeam(iOldTeam) || IsValidTeam(iNewTeam))
-	{
-		SetClientReady(iClient, false);
+    if (IsValidTeam(iOldTeam) || IsValidTeam(iNewTeam))
+    {
+        if (IsMode(Mode_PlayerReady)) {
+            SetTeamReady(iNewTeam == TEAM_NONE ? iOldTeam : iNewTeam, false);
+        } else {
+            SetClientReady(iClient, false);
+        }
 
-		if (g_eMode == Mode_PlayerReady) {
-			SetTeamReady(iNewTeam == TEAM_NONE ? iOldTeam : iNewTeam, false);
-		}
+        if (IsReadyState(ReadyupState_Countdown))
+        {
+            SetReadyState(ReadyupState_UnReady);
 
-		if (IsReadyStateCountdown())
-		{
-			for (int iPlayer = 1; iPlayer <= MaxClients; iPlayer ++)
-			{
-				if (!IsClientInGame(iPlayer)
-				|| IsFakeClient(iPlayer)
-				|| !IsValidTeam(GetClientTeam(iPlayer))) {
-					continue;
-				}
+            for (int iPlayer = 1; iPlayer <= MaxClients; iPlayer ++)
+            {
+                if (!IsClientInGame(iPlayer)
+                || IsFakeClient(iPlayer)
+                || !IsValidTeam(GetClientTeam(iPlayer))) {
+                    continue;
+                }
 
-				CPrintToChat(iPlayer, "%T%T", "TAG", iPlayer, iNewTeam == TEAM_NONE ? "STOP_COUNTDOWN_PLAYER_DISCONNECT" : "STOP_COUNTDOWN_PLAYER_CHANGE_TEAM", iPlayer, sPlayerName);
-			}
+                CPrintToChat(iPlayer, "%T%T", "TAG", iPlayer, iNewTeam == TEAM_NONE ? "STOP_COUNTDOWN_PLAYER_DISCONNECT" : "STOP_COUNTDOWN_PLAYER_CHANGE_TEAM", iPlayer, sPlayerName);
+            }
+        }
+    }
 
-			SetReadyState(ReadyupState_UnReady);
-		}
-	}
-
-	return Plugin_Stop;
+    return Plugin_Stop;
 }
 
 /**
@@ -699,31 +733,27 @@ Action Timer_PlayerTeam(Handle hTimer, DataPack hPack)
  */
 Action Timer_Countdown(Handle timer)
 {
-	if (!IsReadyStateCountdown()) {
-		return Plugin_Stop;
-	}
+    if (!IsReadyState(ReadyupState_Countdown)) {
+        return Plugin_Stop;
+    }
 
-	if (g_iTimer <= 0)
-	{
-		PrintHintTextToAll("%t", "START_COUNTDOWN_END");
+    if (g_iTimer <= 0)
+    {
+        PrintHintTextToAll("%t", "END_COUNTDOWN");
 
-		PlayLiveSound();
-		EnableForceStartTime();
-		ReturnSurvivorToSaferoom();
+        ReturnSurvivorToSaferoom();
 
-		SetConVarStringSilence(g_cvGod, "0");
-		SetConVarStringSilence(g_cvInfinitePrimaryAmmo, "0");
-		SetConVarStringSilence(g_cvPlayerStop, "0");
+        PlayLiveSound();
 
-		SetReadyState(ReadyupState_Ready);
+        SetReadyState(ReadyupState_Ready);
 
-		return Plugin_Stop;
-	}
+        return Plugin_Stop;
+    }
 
-	PrintHintTextToAll("%t", "START_COUNTDOWN", g_iTimer --);
-	PlayCountdownSound();
+    PrintHintTextToAll("%t", "START_COUNTDOWN", g_iTimer --);
+    PlayCountdownSound();
 
-	return Plugin_Continue;
+    return Plugin_Continue;
 }
 
 
@@ -732,23 +762,23 @@ Action Timer_Countdown(Handle timer)
  */
 Action Cmd_TogglePanel(int iClient, int iArgs)
 {
-	if (!IsReadyStateInProgress()) {
-		return Plugin_Continue;
-	}
+    if (!IsReadyStateInProgress()) {
+        return Plugin_Continue;
+    }
 
-	if (IsClientReadyUpVisible(iClient))
-	{
-		SetClientReadyUpVisible(iClient, false);
-		CPrintToChat(iClient, "%T%T", "TAG", iClient, "PANEL_DISABLED", iClient);
-	}
+    if (IsClientReadyUpVisible(iClient))
+    {
+        SetClientReadyUpVisible(iClient, false);
+        CPrintToChat(iClient, "%T%T", "TAG", iClient, "PANEL_DISABLED", iClient);
+    }
 
-	else
-	{
-		SetClientReadyUpVisible(iClient, true);
-		CPrintToChat(iClient, "%T%T", "TAG", iClient, "PANEL_ENABLED", iClient);
-	}
+    else
+    {
+        SetClientReadyUpVisible(iClient, true);
+        CPrintToChat(iClient, "%T%T", "TAG", iClient, "PANEL_ENABLED", iClient);
+    }
 
-	return Plugin_Handled;
+    return Plugin_Handled;
 }
 
 /**
@@ -756,16 +786,16 @@ Action Cmd_TogglePanel(int iClient, int iArgs)
  */
 Action Cmd_ReturnToSaferoom(int iClient, int iArgs)
 {
-	if (!IsReadyStateInProgress()) {
-		return Plugin_Continue;
-	}
+    if (!IsReadyStateInProgress()) {
+        return Plugin_Continue;
+    }
 
-	if (!IsClientSurvivor(iClient)) {
-		return Plugin_Handled;
-	}
+    if (!IsClientSurvivor(iClient)) {
+        return Plugin_Handled;
+    }
 
-	ReturnClientToSaferoom(iClient);
-	return Plugin_Handled;
+    ReturnClientToSaferoom(iClient);
+    return Plugin_Handled;
 }
 
 /**
@@ -773,41 +803,55 @@ Action Cmd_ReturnToSaferoom(int iClient, int iArgs)
  */
 Action Cmd_Ready(int iClient, int iArgs)
 {
-	if (!IsReadyStateInProgress() || !IsModeNeedClientAction()) {
-		return Plugin_Continue;
-	}
+    if (!IsReadyStateInProgress() || !IsModeNeedClientAction()) {
+        return Plugin_Continue;
+    }
 
-	if (!iClient || !IsClientInGame(iClient)) {
-		return Plugin_Continue;
-	}
+    if (!iClient || !IsClientInGame(iClient)) {
+        return Plugin_Continue;
+    }
 
-	int iTeam = GetClientTeam(iClient);
+    int iTeam = GetClientTeam(iClient);
 
-	if (!IsValidTeam(iTeam)) {
-		return Plugin_Handled;
-	}
+    if (!IsValidTeam(iTeam)) {
+        return Plugin_Handled;
+    }
 
-	if (IsClientReady(iClient)) {
-		return Plugin_Handled;
-	}
+    if (IsClientReady(iClient)) {
+        return Plugin_Handled;
+    }
 
-	PlayNotifySound(iClient);
+    int iSpamCommand = IsClientSpamCommand(iClient);
 
-	if (g_eMode == Mode_PlayerReady) {
-		SetTeamReady(iTeam, true);
-	} else {
-		SetClientReady(iClient, true);
-	}
+    if (iSpamCommand == 0)
+    {
+        CPrintToChat(iClient, "%T%T", "TAG", iClient, "STOP_SPAM_COMMAND", iClient, GetClientCommandSpamCooldown(iClient));
+        return Plugin_Handled;
+    }
+    
+    else if (iSpamCommand == 1)
+    {
+        CPrintToChat(iClient, "%T%T", "TAG", iClient, "STOP_SPAM_COMMAND_WITH_INC", iClient, GetClientCommandSpamCooldown(iClient), g_fSpamCooldownIncrement);
+        return Plugin_Handled;
+    }
 
-	if (IsGameReady())
-	{
-		SetReadyState(ReadyupState_Countdown);
+    PlayNotifySound(iClient);
 
-		g_iTimer = g_iDelay;
-		CreateTimer(1.0, Timer_Countdown, .flags = TIMER_FLAG_NO_MAPCHANGE | TIMER_REPEAT);
-	}
+    if (IsMode(Mode_PlayerReady)) {
+        SetTeamReady(iTeam, true);
+    } else {
+        SetClientReady(iClient, true);
+    }
 
-	return Plugin_Handled;
+    if (IsGameReady())
+    {
+        SetReadyState(ReadyupState_Countdown);
+
+        g_iTimer = g_iDelay;
+        CreateTimer(1.0, Timer_Countdown, .flags = TIMER_FLAG_NO_MAPCHANGE | TIMER_REPEAT);
+    }
+
+    return Plugin_Handled;
 }
 
 /**
@@ -815,53 +859,67 @@ Action Cmd_Ready(int iClient, int iArgs)
  */
 Action Cmd_Unready(int iClient, int iArgs)
 {
-	if (!IsReadyStateInProgress() || !IsModeNeedClientAction()) {
-		return Plugin_Continue;
-	}
+    if (!IsReadyStateInProgress() || !IsModeNeedClientAction()) {
+        return Plugin_Continue;
+    }
 
-	if (!iClient || !IsClientInGame(iClient)) {
-		return Plugin_Continue;
-	}
+    if (!iClient || !IsClientInGame(iClient)) {
+        return Plugin_Continue;
+    }
 
-	int iTeam = GetClientTeam(iClient);
+    int iTeam = GetClientTeam(iClient);
 
-	if (!IsValidTeam(iTeam)) {
-		return Plugin_Handled;
-	}
+    if (!IsValidTeam(iTeam)) {
+        return Plugin_Handled;
+    }
 
-	if (!IsClientReady(iClient)) {
-		return Plugin_Handled;
-	}
+    if (!IsClientReady(iClient)) {
+        return Plugin_Handled;
+    }
 
-	PlayNotifySound(iClient);
+    int iSpamCommand = IsClientSpamCommand(iClient);
 
-	if (g_eMode == Mode_PlayerReady) {
-		SetTeamReady(iTeam, false);
-	} else {
-		SetClientReady(iClient, false);
-	}
+    if (iSpamCommand == 0)
+    {
+        CPrintToChat(iClient, "%T%T", "TAG", iClient, "STOP_SPAM_COMMAND", iClient, GetClientCommandSpamCooldown(iClient));
+        return Plugin_Handled;
+    }
+    
+    else if (iSpamCommand == 1)
+    {
+        CPrintToChat(iClient, "%T%T", "TAG", iClient, "STOP_SPAM_COMMAND_WITH_INC", iClient, GetClientCommandSpamCooldown(iClient), g_fSpamCooldownIncrement);
+        return Plugin_Handled;
+    }
 
-	if (IsReadyStateCountdown())
-	{
-		char sPlayerName[MAX_NAME_LENGTH];
+    PlayNotifySound(iClient);
 
-		for (int iPlayer = 1; iPlayer <= MaxClients; iPlayer ++)
-		{
-			if (!IsClientInGame(iPlayer)
-			|| IsFakeClient(iPlayer)
-			|| !IsValidTeam(GetClientTeam(iPlayer))) {
-				continue;
-			}
+    if (IsMode(Mode_PlayerReady)) {
+        SetTeamReady(iTeam, false);
+    } else {
+        SetClientReady(iClient, false);
+    }
 
-			GetClientNameFixed(iClient, sPlayerName, sizeof(sPlayerName), 18);
+    if (IsReadyState(ReadyupState_Countdown))
+    {
+        SetReadyState(ReadyupState_UnReady);
+        
+        char sPlayerName[MAX_NAME_LENGTH];
 
-			CPrintToChat(iPlayer, "%T%T", "TAG", iPlayer, "STOP_COUNTDOWN_PLAYER_UNREADY", iPlayer, sPlayerName);
-		}
+        for (int iPlayer = 1; iPlayer <= MaxClients; iPlayer ++)
+        {
+            if (!IsClientInGame(iPlayer)
+            || IsFakeClient(iPlayer)
+            || !IsValidTeam(GetClientTeam(iPlayer))) {
+                continue;
+            }
 
-		SetReadyState(ReadyupState_UnReady);
-	}
+            GetClientNameFixed(iClient, sPlayerName, sizeof(sPlayerName), 18);
 
-	return Plugin_Handled;
+            CPrintToChat(iPlayer, "%T%T", "TAG", iPlayer, "STOP_COUNTDOWN_PLAYER_UNREADY", iPlayer, sPlayerName);
+        }
+    }
+
+    return Plugin_Handled;
 }
 
 /**
@@ -869,66 +927,66 @@ Action Cmd_Unready(int iClient, int iArgs)
  */
 Action Vote_Callback(int iClient, const char[] sCmd, int iArgs)
 {
-	if (!IsModeNeedClientAction()) {
-		return Plugin_Continue;
-	}
+    if (!IsModeNeedClientAction()) {
+        return Plugin_Continue;
+    }
 
-	if (!IsReadyStateInProgress()) {
-		return Plugin_Continue;
-	}
+    if (!IsReadyStateInProgress()) {
+        return Plugin_Continue;
+    }
 
-	if (NativeVotes_IsVoteInProgress()) {
-		return Plugin_Continue;
-	}
+    if (NativeVotes_IsVoteInProgress()) {
+        return Plugin_Continue;
+    }
 
-	char sArg[8]; GetCmdArg(1, sArg, sizeof(sArg));
+    char sArg[8]; GetCmdArg(1, sArg, sizeof(sArg));
 
-	if (strcmp(sArg, "Yes", false) == 0) {
-		Cmd_Ready(iClient, 0);
-	}
+    if (strcmp(sArg, "Yes", false) == 0) {
+        Cmd_Ready(iClient, 0);
+    }
 
-	else if (strcmp(sArg, "No", false) == 0) {
-		Cmd_Unready(iClient, 0);
-	}
+    else if (strcmp(sArg, "No", false) == 0) {
+        Cmd_Unready(iClient, 0);
+    }
 
-	return Plugin_Continue;
+    return Plugin_Continue;
 }
 
 /**
  *
  */
-public void OnPlayerRunCmdPost(int iClient, int iButtons, int impulse,
-	const float vel[3], const float angles[3], int weapon, int subtype,
-	int cmdnum, int tickcount, int seed, const int iMouse[2])
+public void OnPlayerRunCmdPost(int iClient, int iButtons, int iImpulse,
+    const float vel[3], const float angles[3], int weapon, int subtype,
+    int cmdnum, int tickcount, int seed, const int iMouse[2])
 {
-	if (!IsReadyStateInProgress()) {
-		return;
-	}
+    if (!IsReadyStateInProgress()) {
+        return;
+    }
 
-	if (!IsClientInGame(iClient)) {
-		return;
-	}
+    if (!IsClientInGame(iClient)) {
+        return;
+    }
 
-	if (!IsFakeClient(iClient))
-	{
-		static int iLastMouse[MAXPLAYERS + 1][2];
+    if (!IsFakeClient(iClient))
+    {
+        static int iLastMouse[MAXPLAYERS + 1][2];
 
-		// iMouse Movement Check
-		if (iMouse[0] != iLastMouse[iClient][0] || iMouse[1] != iLastMouse[iClient][1])
-		{
-			iLastMouse[iClient][0] = iMouse[0];
-			iLastMouse[iClient][1] = iMouse[1];
-			UpdateClientActivity(iClient);
-		}
+        // iMouse Movement Check
+        if (iMouse[0] != iLastMouse[iClient][0] || iMouse[1] != iLastMouse[iClient][1])
+        {
+            iLastMouse[iClient][0] = iMouse[0];
+            iLastMouse[iClient][1] = iMouse[1];
+            UpdateClientActivity(iClient);
+        }
 
-		else if (iButtons || impulse) {
-			UpdateClientActivity(iClient);
-		}
-	}
+        else if (iButtons || iImpulse) {
+            UpdateClientActivity(iClient);
+        }
+    }
 
-	if (GetEntProp(iClient, Prop_Send, "m_nWaterLevel") == WATER_LEVEL_EYES) {
-		ReturnClientToSaferoom(iClient);
-	}
+    if (IsClientInWater(iClient)) {
+        ReturnClientToSaferoom(iClient);
+    }
 }
 
 /**
@@ -936,150 +994,68 @@ public void OnPlayerRunCmdPost(int iClient, int iButtons, int impulse,
  */
 Panel BuildPanel(int iClient)
 {
-	Panel hPanel = CreatePanel();
+    Panel hPanel = CreatePanel();
 
-	/*
-	 * Header.
-	 */
-	int iHeaderSize = GetArraySize(g_hPanelHeader);
+    /*
+     * Header.
+     */
+    int iHeaderSize = GetArraySize(g_hPanelHeader);
 
-	if (iHeaderSize > 0)
-	{
-		char sHeader[64];
+    if (iHeaderSize > 0)
+    {
+        char sHeader[64];
 
-		for (int iIndex = 0; iIndex < iHeaderSize; iIndex ++)
-		{
-			if (ExecuteForward_OnPrepareReadyUpItem(PanelPos_Header, iClient, iIndex) == Plugin_Continue) {
-				continue;
-			}
+        for (int iIndex = 0; iIndex < iHeaderSize; iIndex ++)
+        {
+            if (ExecuteForward_OnPrepareReadyUpItem(PanelPos_Header, iClient, iIndex) == Plugin_Continue) {
+                continue;
+            }
 
-			GetArrayString(g_hPanelHeader, iIndex, sHeader, sizeof(sHeader));
-			DrawPanelText(hPanel, sHeader);
-		}
+            GetArrayString(g_hPanelHeader, iIndex, sHeader, sizeof(sHeader));
+            DrawPanelText(hPanel, sHeader);
+        }
 
-		DrawPanelSpace(hPanel);
-	}
+        DrawPanelSpace(hPanel);
+    }
 
-	int iPlayers[4][MAXPLAYERS + 1];
-	int iTotalPlayers[4] = {0, ...};
+    /*
+     * Body.
+     */
+    if (g_eReadyupState != ReadyupState_Ready)
+    {
+        switch (g_eMode)
+        {
+            case Mode_AutoStart: DrawPanelBodyForAutoStart(hPanel, iClient);
+            case Mode_PlayerReady: DrawPanelBodyForPlayerReady(hPanel, iClient);
+            case Mode_TeamReady: DrawPanelBodyForTeamReady(hPanel, iClient);
+        }
+    }
 
-	for (int iPlayer = 1; iPlayer <= MaxClients; iPlayer ++)
-	{
-		if (!IsClientInGame(iPlayer) || IsFakeClient(iPlayer)) {
-			continue;
-		}
+    else DrawPanelFormatText(hPanel, "%T", "PANEL_ALREADY_READY", iClient);
 
-		int iPlayerTeam = GetClientTeam(iPlayer);
+    /*
+     * Footer.
+     */
+    int iFooterSize = GetArraySize(g_hPanelFooter);
 
-		iPlayers[iPlayerTeam][iTotalPlayers[iPlayerTeam] ++] = iPlayer;
-	}
+    if (iFooterSize > 0)
+    {
+        DrawPanelSpace(hPanel);
 
-	char sPanelPlayerReady[16]; FormatEx(sPanelPlayerReady, sizeof(sPanelPlayerReady), "%T", "PANEL_PLAYER_READY", iClient);
-	char sPanelPlayerUnready[16]; FormatEx(sPanelPlayerUnready, sizeof(sPanelPlayerUnready), "%T", "PANEL_PLAYER_UNREADY", iClient);
+        char sFooter[64];
 
-	int iBlock = 0;
-	char sBlockName[64];
+        for (int iIndex = 0; iIndex < iFooterSize; iIndex ++)
+        {
+            if (ExecuteForward_OnPrepareReadyUpItem(PanelPos_Footer, iClient, iIndex) == Plugin_Continue) {
+                continue;
+            }
 
-	char sPlayerName[MAX_NAME_LENGTH];
-	char sPlayerAfk[16];
+            GetArrayString(g_hPanelFooter, iIndex, sFooter, sizeof(sFooter));
+            DrawPanelText(hPanel, sFooter);
+        }
+    }
 
-	int iFullTeam[4];
-	iFullTeam[TEAM_SURVIVOR] = GetConVarInt(g_cvSurvivorLimit);
-	iFullTeam[TEAM_INFECTED] = GetConVarInt(g_cvMaxPlayerZombies);
-
-	for (int iTeam = TEAM_SURVIVOR; iTeam <= TEAM_INFECTED; iTeam ++)
-	{
-		FormatEx(sBlockName, sizeof(sBlockName), "%T", PANEL_BLOCK_NAME[iBlock], iClient);
-
-		DrawPanelFormatText(hPanel, "%T", "PANEL_BLOCK_TEAM", iClient, iBlock + 1, sBlockName, iTotalPlayers[iTeam], iFullTeam[iTeam]);
-
-		for (int iPlayer = 0; iPlayer < iTotalPlayers[iTeam]; iPlayer ++)
-		{
-			GetClientNameFixed(iPlayers[iTeam][iPlayer], sPlayerName, sizeof(sPlayerName), 18);
-
-			if (IsClientAfk(iPlayers[iTeam][iPlayer])) {
-				FormatEx(sPlayerAfk, sizeof(sPlayerAfk), "%T", "PANEL_BLOCK_AFK", iClient);
-			} else {
-				sPlayerAfk[0] = '\0';
-			}
-
-			DrawPanelFormatText(hPanel, "%T", "PANEL_BLOCK_ITEM", iClient,
-				(IsClientReady(iPlayers[iTeam][iPlayer]) || g_eMode == Mode_AlwaysReady || g_eMode == Mode_AutoStart) ? sPanelPlayerReady : sPanelPlayerUnready,
-				sPlayerAfk,
-				sPlayerName
-			);
-		}
-
-		if (!iBlock) {
-			DrawPanelSpace(hPanel);
-		}
-
-		iBlock ++;
-	}
-
-	if (g_bCasterAvailable)
-	{
-		int iCaster[MAXPLAYERS + 1];
-		int iTotalCasters = 0;
-
-		for (int iPlayer = 0; iPlayer < iTotalPlayers[TEAM_SPECTATOR]; iPlayer ++)
-		{
-			if (!IsClientCaster(iPlayers[TEAM_SPECTATOR][iPlayer])) {
-				continue;
-			}
-
-			iCaster[iTotalCasters ++] = iPlayers[TEAM_SPECTATOR][iPlayer];
-		}
-
-		if (iTotalCasters > 0)
-		{
-			DrawPanelSpace(hPanel);
-			FormatEx(sBlockName, sizeof(sBlockName), "%T", PANEL_BLOCK_NAME[iBlock], iClient);
-
-			DrawPanelFormatText(hPanel, "%T", "PANEL_BLOCK_TEAM_SHORT", iClient, iBlock + 1, sBlockName);
-
-			for (int iPlayer = 0; iPlayer < iTotalCasters; iPlayer ++)
-			{
-				GetClientNameFixed(iCaster[iPlayer], sPlayerName, sizeof(sPlayerName), 18);
-
-				if (IsClientAfk(iCaster[iPlayer])) {
-					FormatEx(sPlayerAfk, sizeof(sPlayerAfk), "%T", "PANEL_BLOCK_AFK", iClient);
-				} else {
-					sPlayerAfk[0] = '\0';
-				}
-
-				DrawPanelFormatText(hPanel, "%T", "PANEL_BLOCK_ITEM", iClient,
-					sPanelPlayerReady,
-					sPlayerAfk,
-					sPlayerName
-				);
-			}
-		}
-	}
-
-	/*
-	 * Footer.
-	 */
-	int iFooterSize = GetArraySize(g_hPanelFooter);
-
-	if (iFooterSize > 0)
-	{
-		DrawPanelSpace(hPanel);
-
-		char sFooter[64];
-
-		for (int iIndex = 0; iIndex < iFooterSize; iIndex ++)
-		{
-			if (ExecuteForward_OnPrepareReadyUpItem(PanelPos_Footer, iClient, iIndex) == Plugin_Continue) {
-				continue;
-			}
-
-			GetArrayString(g_hPanelFooter, iIndex, sFooter, sizeof(sFooter));
-			DrawPanelText(hPanel, sFooter);
-		}
-	}
-
-	return hPanel;
+    return hPanel;
 }
 
 /**
@@ -1087,25 +1063,199 @@ Panel BuildPanel(int iClient)
  */
 int DummyHandler(Handle menu, MenuAction action, int param1, int param2) { return 0; }
 
+void DrawPanelBodyForAutoStart(Handle hPanel, int iClient)
+{
+    if (IsAnyPlayerLoading()) {
+        DrawPanelFormatText(hPanel, "%T", "PANEL_AUTOSTART_CONNECTING_DELAY", iClient);
+    } else {
+        DrawPanelFormatText(hPanel, "%T", "PANEL_AUTOSTART_TIMER", iClient, g_iAutoStartTimer + 1);
+    }
+}
+
+void DrawPanelBodyForPlayerReady(Handle hPanel, int iClient)
+{
+    char sPanelMarkReady[16]; FormatEx(sPanelMarkReady, sizeof(sPanelMarkReady), "%T", "PANEL_MARK_READY", iClient);
+    char sPanelMarkUnready[16]; FormatEx(sPanelMarkUnready, sizeof(sPanelMarkUnready), "%T", "PANEL_MARK_UNREADY", iClient);
+    char sPanelMarkAfk[16]; FormatEx(sPanelMarkAfk, sizeof(sPanelMarkAfk), "%T", "PANEL_MARK_AFK", iClient);
+    char sSurvivorTeam[64]; FormatEx(sSurvivorTeam, sizeof(sSurvivorTeam), "%T", "PANEL_SURVIVOR_TEAM", iClient);
+    char sInfectedTeam[64]; FormatEx(sInfectedTeam, sizeof(sInfectedTeam), "%T", "PANEL_INFECTED_TEAM", iClient);
+
+    bool bSurvivorAfk = false;
+    bool bInfectedAfk = false;
+
+    for (int iPlayer = 1; iPlayer <= MaxClients; iPlayer ++)
+    {
+        if (!IsClientInGame(iPlayer)|| IsFakeClient(iPlayer) || !IsClientAfk(iPlayer)) {
+            continue;
+        }
+
+        int iPlayerTeam = GetClientTeam(iPlayer);
+
+        if (iPlayerTeam == TEAM_SURVIVOR) {
+            bSurvivorAfk = true;
+        } else if (iPlayerTeam == TEAM_INFECTED) {
+            bInfectedAfk = true;
+        }
+    }
+
+    DrawPanelFormatText(hPanel, "%T", "PANEL_BLOCK_ITEM", iClient,
+        IsTeamReady(TEAM_SURVIVOR) ? sPanelMarkReady : sPanelMarkUnready,
+        bSurvivorAfk ? sPanelMarkAfk : "",
+        sSurvivorTeam
+    );
+
+    DrawPanelFormatText(hPanel, "%T", "PANEL_BLOCK_ITEM", iClient,
+        IsTeamReady(TEAM_INFECTED) ? sPanelMarkReady : sPanelMarkUnready,
+        bInfectedAfk ? sPanelMarkAfk : "",
+        sInfectedTeam
+    );
+}
+
+void DrawPanelBodyForTeamReady(Handle hPanel, int iClient)
+{
+    char PANEL_BLOCK_NAME[][] = {
+        "PANEL_SURVIVOR_TEAM", "PANEL_INFECTED_TEAM", "PANEL_CASTER_TEAM"
+    };
+
+    char sPanelMarkReady[16]; FormatEx(sPanelMarkReady, sizeof(sPanelMarkReady), "%T", "PANEL_MARK_READY", iClient);
+    char sPanelMarkUnready[16]; FormatEx(sPanelMarkUnready, sizeof(sPanelMarkUnready), "%T", "PANEL_MARK_UNREADY", iClient);
+    char sPanelMarkAfk[16]; FormatEx(sPanelMarkAfk, sizeof(sPanelMarkAfk), "%T", "PANEL_MARK_AFK", iClient);
+
+    int iPlayers[4][MAXPLAYERS + 1];
+    int iTotalPlayers[4] = {0, ...};
+
+    for (int iPlayer = 1; iPlayer <= MaxClients; iPlayer ++)
+    {
+        if (!IsClientInGame(iPlayer) || IsFakeClient(iPlayer)) {
+            continue;
+        }
+
+        int iPlayerTeam = GetClientTeam(iPlayer);
+
+        iPlayers[iPlayerTeam][iTotalPlayers[iPlayerTeam] ++] = iPlayer;
+    }
+
+    int iBlock = 0;
+    char sBlockName[64];
+
+    char sPlayerName[MAX_NAME_LENGTH];
+
+    for (int iTeam = TEAM_SURVIVOR; iTeam <= TEAM_INFECTED; iTeam ++)
+    {
+        FormatEx(sBlockName, sizeof(sBlockName), "%T", PANEL_BLOCK_NAME[iBlock], iClient);
+
+        DrawPanelFormatText(hPanel, "%T", "PANEL_BLOCK_TEAM", iClient, iBlock + 1, sBlockName);
+
+        for (int iPlayer = 0; iPlayer < iTotalPlayers[iTeam]; iPlayer ++)
+        {
+            GetClientNameFixed(iPlayers[iTeam][iPlayer], sPlayerName, sizeof(sPlayerName), 18);
+
+            DrawPanelFormatText(hPanel, "%T", "PANEL_BLOCK_ITEM", iClient,
+                IsClientReady(iPlayers[iTeam][iPlayer]) ? sPanelMarkReady : sPanelMarkUnready,
+                IsClientAfk(iPlayers[iTeam][iPlayer]) ? sPanelMarkAfk : "",
+                sPlayerName
+            );
+        }
+
+        if (!iBlock) {
+            DrawPanelSpace(hPanel);
+        }
+
+        iBlock ++;
+    }
+
+    if (g_bCasterAvailable)
+    {
+        int iCaster[MAXPLAYERS + 1];
+        int iTotalCasters = 0;
+
+        for (int iPlayer = 0; iPlayer < iTotalPlayers[TEAM_SPECTATOR]; iPlayer ++)
+        {
+            if (!IsClientCaster(iPlayers[TEAM_SPECTATOR][iPlayer])) {
+                continue;
+            }
+
+            iCaster[iTotalCasters ++] = iPlayers[TEAM_SPECTATOR][iPlayer];
+        }
+
+        if (iTotalCasters > 0)
+        {
+            DrawPanelSpace(hPanel);
+            FormatEx(sBlockName, sizeof(sBlockName), "%T", PANEL_BLOCK_NAME[iBlock], iClient);
+
+            DrawPanelFormatText(hPanel, "%T", "PANEL_BLOCK_TEAM_SHORT", iClient, iBlock + 1, sBlockName);
+
+            for (int iPlayer = 0; iPlayer < iTotalCasters; iPlayer ++)
+            {
+                GetClientNameFixed(iCaster[iPlayer], sPlayerName, sizeof(sPlayerName), 18);
+
+                DrawPanelFormatText(hPanel, "%T", "PANEL_BLOCK_ITEM", iClient,
+                    sPanelMarkReady,
+                    IsClientAfk(iCaster[iPlayer]) ? sPanelMarkAfk : "",
+                    sPlayerName
+                );
+            }
+        }
+    }
+}
+
 /**
  *
  */
 bool DrawPanelFormatText(Handle hPanel, const char[] sText, any ...)
 {
-	char sFormatText[128];
-	VFormat(sFormatText, sizeof(sFormatText), sText, 3);
-	return DrawPanelText(hPanel, sFormatText);
-}
-
-void DrawPanelSpace(Handle hPanel) {
-	DrawPanelItem(hPanel, "", ITEMDRAW_SPACER);
+    char sFormatText[128];
+    VFormat(sFormatText, sizeof(sFormatText), sText, 3);
+    return DrawPanelText(hPanel, sFormatText);
 }
 
 /**
  *
  */
+void DrawPanelSpace(Handle hPanel) {
+    DrawPanelItem(hPanel, "", ITEMDRAW_SPACER);
+}
+
+/**
+ *
+ */
+int IsClientSpamCommand(int iClient)
+{
+    float fCurrentTime = GetEngineTime();
+
+    if (fCurrentTime < g_fClientCommandSpamCooldown[iClient])
+    {
+        g_iClientCommandSpamAttempts[iClient]++;
+
+        if (g_iClientCommandSpamAttempts[iClient] > g_iMaxAttempts)
+        {
+            g_fClientCommandSpamCooldown[iClient] += g_fSpamCooldownIncrement; // Increase cooldown time
+            g_iClientCommandSpamAttempts[iClient] = 0; // Reset spam attempts
+
+            return 1;
+        }
+
+        return 0;
+    }
+    
+    g_fClientCommandSpamCooldown[iClient] = fCurrentTime + g_fSpamCooldownInitial; // Set cooldown
+    g_iClientCommandSpamAttempts[iClient] = 0; // Reset spam attempts
+
+    return -1;
+}
+
+float GetClientCommandSpamCooldown(int iClient) {
+    return g_fClientCommandSpamCooldown[iClient] - GetEngineTime();
+}
+
+/**
+ * Validates if is a valid team.
+ *
+ * @param iTeam     Team index.
+ * @return          True if team is valid, false otherwise.
+ */
 bool IsValidTeam(int iTeam) {
-	return (iTeam == TEAM_SURVIVOR || iTeam == TEAM_INFECTED);
+    return (iTeam == TEAM_SURVIVOR || iTeam == TEAM_INFECTED);
 }
 
 /**
@@ -1113,20 +1263,20 @@ bool IsValidTeam(int iTeam) {
  */
 bool IsTeamReady(int iTeam)
 {
-	for (int iClient = 1; iClient <= MaxClients; iClient++)
-	{
-		if (!IsClientInGame(iClient)
-		|| IsFakeClient(iClient)
-		|| GetClientTeam(iClient) != iTeam) {
-			continue;
-		}
+    for (int iClient = 1; iClient <= MaxClients; iClient++)
+    {
+        if (!IsClientInGame(iClient)
+        || IsFakeClient(iClient)
+        || GetClientTeam(iClient) != iTeam) {
+            continue;
+        }
 
-		if (!IsClientReady(iClient)) {
-			return false;
-		}
-	}
+        if (!IsClientReady(iClient)) {
+            return false;
+        }
+    }
 
-	return true;
+    return true;
 }
 
 /**
@@ -1134,79 +1284,83 @@ bool IsTeamReady(int iTeam)
  */
 bool SetTeamReady(int iTeam, bool bReady)
 {
-	for (int iClient = 1; iClient <= MaxClients; iClient++)
-	{
-		if (!IsClientInGame(iClient) || IsFakeClient(iClient) || GetClientTeam(iClient) != iTeam) {
-			continue;
-		}
+    for (int iClient = 1; iClient <= MaxClients; iClient++)
+    {
+        if (!IsClientInGame(iClient) || IsFakeClient(iClient) || GetClientTeam(iClient) != iTeam) {
+            continue;
+        }
 
-		SetClientReady(iClient, bReady);
-	}
+        SetClientReady(iClient, bReady);
+    }
 
-	return true;
+    return true;
 }
 
 /**
  *
  */
 bool IsGameReady() {
-	return IsTeamReady(TEAM_INFECTED) && IsTeamReady(TEAM_SURVIVOR);
+    return IsTeamReady(TEAM_INFECTED) && IsTeamReady(TEAM_SURVIVOR);
 }
 
 /**
  *
  */
 bool IsClientReadyUpVisible(int iClient) {
-	return g_bClientReadyUpVisible[iClient];
+    return g_bClientReadyUpVisible[iClient];
 }
 
 /**
  *
  */
 void SetClientReadyUpVisible(int iClient, bool bVisible) {
-	g_bClientReadyUpVisible[iClient] = bVisible;
+    g_bClientReadyUpVisible[iClient] = bVisible;
 }
 
 /**
  *
  */
 void UpdateClientActivity(int iClient) {
-	g_fLastClientActivityTime[iClient] = GetEngineTime();
+    g_fLastClientActivityTime[iClient] = GetEngineTime();
 }
 
 /**
  *
  */
 float GetClientAfkTime(int iClient) {
-	return GetEngineTime() - g_fLastClientActivityTime[iClient];
+    return GetEngineTime() - g_fLastClientActivityTime[iClient];
 }
 
 /**
  *
  */
 bool IsClientAfk(int iClient) {
-	return GetClientAfkTime(iClient) > g_fAfkDuration;
+    return GetClientAfkTime(iClient) > g_fAfkDuration;
 }
 
 /**
  *
  */
 void DisableForceStartTime() {
-	L4D2_CTimerStart(L4D2CT_VersusStartTimer, 99999.9);
+    L4D2_CTimerStart(L4D2CT_VersusStartTimer, 99999.9);
 }
 
 /**
  *
  */
 void EnableForceStartTime() {
-	L4D2_CTimerStart(L4D2CT_VersusStartTimer, GetConVarFloat(g_cvForceStartTime));
+    L4D2_CTimerStart(L4D2CT_VersusStartTimer, GetConVarFloat(g_cvForceStartTime));
+}
+
+bool IsMode(Mode eMode) {
+    return (g_eMode == eMode);
 }
 
 /**
  *
  */
 bool IsModeNeedClientAction() {
-	return (g_eMode == Mode_PlayerReady || g_eMode == Mode_TeamReady);
+    return (IsMode(Mode_PlayerReady) || IsMode(Mode_TeamReady));
 }
 
 /**
@@ -1214,11 +1368,11 @@ bool IsModeNeedClientAction() {
  */
 void SetReadyState(ReadyupState eReadyupState)
 {
-	if (g_eReadyupState != eReadyupState) {
-		ExecuteForward_OnChangeReadyState(g_eReadyupState, eReadyupState);
-	}
+    if (g_eReadyupState != eReadyupState) {
+        ExecuteForward_OnChangeReadyState(g_eReadyupState, eReadyupState);
+    }
 
-	g_eReadyupState = eReadyupState;
+    g_eReadyupState = eReadyupState;
 }
 
 /**
@@ -1226,27 +1380,27 @@ void SetReadyState(ReadyupState eReadyupState)
  */
 void ExecuteForward_OnChangeReadyState(ReadyupState eOldState, ReadyupState eNewState)
 {
-	if (GetForwardFunctionCount(g_fwdOnChangeReadyState))
-	{
-		Call_StartForward(g_fwdOnChangeReadyState);
-		Call_PushCell(eOldState);
-		Call_PushCell(eNewState);
-		Call_Finish();
-	}
+    if (GetForwardFunctionCount(g_fwdOnChangeReadyState))
+    {
+        Call_StartForward(g_fwdOnChangeReadyState);
+        Call_PushCell(eOldState);
+        Call_PushCell(eNewState);
+        Call_Finish();
+    }
+}
+
+/**
+ *
+ */
+bool IsReadyState(ReadyupState eReadtupState) {
+    return (g_eReadyupState == eReadtupState);
 }
 
 /**
  *
  */
 bool IsReadyStateInProgress() {
-	return g_eReadyupState != ReadyupState_None && g_eReadyupState != ReadyupState_Ready;
-}
-
-/**
- *
- */
-bool IsReadyStateCountdown() {
-	return g_eReadyupState == ReadyupState_Countdown;
+    return IsReadyState(ReadyupState_UnReady) || IsReadyState(ReadyupState_Countdown);
 }
 
 /**
@@ -1254,22 +1408,22 @@ bool IsReadyStateCountdown() {
  */
 bool SetClientReady(int iClient, bool bReady)
 {
-	bool bBeforeReady = g_bClientReady[iClient];
+    bool bBeforeReady = g_bClientReady[iClient];
 
-	if ((bBeforeReady && !bReady) || (!bBeforeReady && bReady)) {
-		ExecuteForward_OnChangeClientReady(iClient, bReady);
-	}
+    if ((bBeforeReady && !bReady) || (!bBeforeReady && bReady)) {
+        ExecuteForward_OnChangeClientReady(iClient, bReady);
+    }
 
-	g_bClientReady[iClient] = bReady;
+    g_bClientReady[iClient] = bReady;
 
-	return bBeforeReady != bReady;
+    return bBeforeReady != bReady;
 }
 
 /**
  *
  */
 bool IsClientReady(int iClient) {
-	return g_bClientReady[iClient];
+    return g_bClientReady[iClient];
 }
 
 /**
@@ -1277,13 +1431,13 @@ bool IsClientReady(int iClient) {
  */
 void ExecuteForward_OnChangeClientReady(int iClient, bool bReady)
 {
-	if (GetForwardFunctionCount(g_fwdOnChangeClientReady))
-	{
-		Call_StartForward(g_fwdOnChangeClientReady);
-		Call_PushCell(iClient);
-		Call_PushCell(bReady);
-		Call_Finish();
-	}
+    if (GetForwardFunctionCount(g_fwdOnChangeClientReady))
+    {
+        Call_StartForward(g_fwdOnChangeClientReady);
+        Call_PushCell(iClient);
+        Call_PushCell(bReady);
+        Call_Finish();
+    }
 }
 
 /**
@@ -1291,18 +1445,18 @@ void ExecuteForward_OnChangeClientReady(int iClient, bool bReady)
  */
 Action ExecuteForward_OnPrepareReadyUpItem(PanelPos ePos, int iClient, int iIndex)
 {
-	Action aReturn = Plugin_Continue;
+    Action aReturn = Plugin_Continue;
 
-	if (GetForwardFunctionCount(g_fwdOnPrepareReadyUpItem))
-	{
-		Call_StartForward(g_fwdOnPrepareReadyUpItem);
-		Call_PushCell(ePos);
-		Call_PushCell(iClient);
-		Call_PushCell(iIndex);
-		Call_Finish(aReturn);
-	}
+    if (GetForwardFunctionCount(g_fwdOnPrepareReadyUpItem))
+    {
+        Call_StartForward(g_fwdOnPrepareReadyUpItem);
+        Call_PushCell(ePos);
+        Call_PushCell(iClient);
+        Call_PushCell(iIndex);
+        Call_Finish(aReturn);
+    }
 
-	return aReturn;
+    return aReturn;
 }
 
 /**
@@ -1310,14 +1464,14 @@ Action ExecuteForward_OnPrepareReadyUpItem(PanelPos ePos, int iClient, int iInde
  */
 void ExecuteForward_OnRemoveReadyUpItem(PanelPos ePos, int iOldIndex, int iNewIndex)
 {
-	if (GetForwardFunctionCount(g_fwdOnRemoveReadyUpItem))
-	{
-		Call_StartForward(g_fwdOnRemoveReadyUpItem);
-		Call_PushCell(ePos);
-		Call_PushCell(iOldIndex);
-		Call_PushCell(iNewIndex);
-		Call_Finish();
-	}
+    if (GetForwardFunctionCount(g_fwdOnRemoveReadyUpItem))
+    {
+        Call_StartForward(g_fwdOnRemoveReadyUpItem);
+        Call_PushCell(ePos);
+        Call_PushCell(iOldIndex);
+        Call_PushCell(iNewIndex);
+        Call_Finish();
+    }
 }
 
 /**
@@ -1325,9 +1479,9 @@ void ExecuteForward_OnRemoveReadyUpItem(PanelPos ePos, int iOldIndex, int iNewIn
  */
 void PlayLiveSound()
 {
-	if (IsSoundEnabled()) {
-		EmitSoundToAll(g_sLiveSound, .volume = 0.5);
-	}
+    if (IsSoundEnabled()) {
+        EmitSoundToAll(g_sLiveSound, .volume = 0.5);
+    }
 }
 
 /**
@@ -1335,9 +1489,9 @@ void PlayLiveSound()
  */
 void PlayCountdownSound()
 {
-	if (IsSoundEnabled()) {
-		EmitSoundToAll(g_sCountdownSound, .volume = 0.5);
-	}
+    if (IsSoundEnabled()) {
+        EmitSoundToAll(g_sCountdownSound, .volume = 0.5);
+    }
 }
 
 /**
@@ -1345,16 +1499,16 @@ void PlayCountdownSound()
  */
 void PlayNotifySound(int iClient)
 {
-	if (IsSoundEnabled()) {
-		EmitSoundToClient(iClient, g_sNotifySound);
-	}
+    if (IsSoundEnabled()) {
+        EmitSoundToClient(iClient, g_sNotifySound);
+    }
 }
 
 /**
  *
  */
 bool IsSoundEnabled() {
-	return GetConVarBool(g_cvSoundEnable);
+    return GetConVarBool(g_cvSoundEnable);
 }
 
 /**
@@ -1362,10 +1516,10 @@ bool IsSoundEnabled() {
  */
 bool IsSoundExists(const char[] sSoundPath)
 {
-	char szPath[PLATFORM_MAX_PATH];
-	FormatEx(szPath, sizeof(szPath), "sound/%s", sSoundPath);
+    char szPath[PLATFORM_MAX_PATH];
+    FormatEx(szPath, sizeof(szPath), "sound/%s", sSoundPath);
 
-	return (FileExists(szPath, true));
+    return (FileExists(szPath, true));
 }
 
 /**
@@ -1373,13 +1527,13 @@ bool IsSoundExists(const char[] sSoundPath)
  */
 void GetClientNameFixed(int iClient, char[] sName, int length, int iMaxSize)
 {
-	GetClientName(iClient, sName, length);
+    GetClientName(iClient, sName, length);
 
-	if (strlen(sName) > iMaxSize)
-	{
-		sName[iMaxSize - 3] = sName[iMaxSize - 2] = sName[iMaxSize - 1] = '.';
-		sName[iMaxSize] = '\0';
-	}
+    if (strlen(sName) > iMaxSize)
+    {
+        sName[iMaxSize - 3] = sName[iMaxSize - 2] = sName[iMaxSize - 1] = '.';
+        sName[iMaxSize] = '\0';
+    }
 }
 
 /**
@@ -1387,22 +1541,22 @@ void GetClientNameFixed(int iClient, char[] sName, int length, int iMaxSize)
  */
 void ReturnSurvivorToSaferoom()
 {
-	for (int iClient = 1; iClient <= MaxClients; iClient ++)
-	{
-		if (!IsClientInGame(iClient) || !IsClientSurvivor(iClient)) {
-			continue;
-		}
+    for (int iClient = 1; iClient <= MaxClients; iClient ++)
+    {
+        if (!IsClientInGame(iClient) || !IsClientSurvivor(iClient)) {
+            continue;
+        }
 
-		ReturnClientToSaferoom(iClient);
-	}
+        ReturnClientToSaferoom(iClient);
+    }
 }
 
 void SetConVarStringSilence(Handle hConVar, const char[] sValue)
 {
-	int iFlags = GetConVarFlags(hConVar);
-	SetConVarFlags(hConVar, iFlags & ~FCVAR_NOTIFY);
-	SetConVarString(hConVar, sValue, .notify = false);
-	SetConVarFlags(hConVar, iFlags);
+    int iFlags = GetConVarFlags(hConVar);
+    SetConVarFlags(hConVar, iFlags & ~FCVAR_NOTIFY);
+    SetConVarString(hConVar, sValue, .notify = false);
+    SetConVarFlags(hConVar, iFlags);
 }
 
 /**
@@ -1410,65 +1564,84 @@ void SetConVarStringSilence(Handle hConVar, const char[] sValue)
  */
 void ReturnClientToSaferoom(int iClient)
 {
-	int iFlags = GetCommandFlags("warp_to_start_area");
+    int iFlags = GetCommandFlags("warp_to_start_area");
 
-	SetCommandFlags("warp_to_start_area", iFlags & ~FCVAR_CHEAT);
+    SetCommandFlags("warp_to_start_area", iFlags & ~FCVAR_CHEAT);
 
-	if (GetEntProp(iClient, Prop_Send, "m_isHangingFromLedge")) {
-		L4D_ReviveSurvivor(iClient);
-	}
+    if (GetEntProp(iClient, Prop_Send, "m_isHangingFromLedge")) {
+        L4D_ReviveSurvivor(iClient);
+    }
 
-	FakeClientCommand(iClient, "warp_to_start_area");
+    FakeClientCommand(iClient, "warp_to_start_area");
 
-	SetCommandFlags("warp_to_start_area", iFlags);
+    SetCommandFlags("warp_to_start_area", iFlags);
 
-	TeleportEntity(iClient, NULL_VECTOR, NULL_VECTOR, {0.0, 0.0, 0.0});
-	SetEntPropFloat(iClient, Prop_Send, "m_flFallVelocity", 0.0);
+    TeleportEntity(iClient, NULL_VECTOR, NULL_VECTOR, {0.0, 0.0, 0.0});
+    SetEntPropFloat(iClient, Prop_Send, "m_flFallVelocity", 0.0);
 }
 
 /**
+ * Determine if a player is connecting.
  *
+ * @return          True if there are connecting players, false otherwise.
  */
 bool IsAnyPlayerLoading()
 {
-	for (int iClient = 1; iClient <= MaxClients; iClient ++)
-	{
-		if (IsClientConnected(iClient)
-		&& (!IsClientInGame(iClient) || GetClientTeam(iClient) == TEAM_NONE)) {
-			return true;
-		}
-	}
+    for (int iClient = 1; iClient <= MaxClients; iClient ++)
+    {
+        if (IsClientConnected(iClient) && (!IsClientInGame(iClient) || GetClientTeam(iClient) == TEAM_NONE)) {
+            return true;
+        }
+    }
 
-	return false;
+    return false;
 }
 
 /**
+ * Checks that the server is empty.
  *
+ * @return          True if server is empty, false otherwise.
  */
 int IsEmptyServer()
 {
-	for (int iClient = 1; iClient <= MaxClients; iClient ++)
-	{
-		if (!IsClientInGame(iClient) || IsFakeClient(iClient)) {
-			continue;
-		}
+    for (int iClient = 1; iClient <= MaxClients; iClient ++)
+    {
+        if (!IsClientInGame(iClient) || IsFakeClient(iClient)) {
+            continue;
+        }
 
-		return false;
-	}
+        return false;
+    }
 
-	return true;
+    return true;
 }
 
 /**
+ * Validates if is a valid client.
  *
+ * @param iClient   Client index.
+ * @return          True if client is valid, false otherwise.
  */
 bool IsValidClient(int iClient) {
-	return (iClient > 0 && iClient <= MaxClients);
+    return (iClient > 0 && iClient <= MaxClients);
 }
 
 /**
- * Survivor team player?
+ * Returns whether the player is in water.
+ *
+ * @param iClient   Client index.
+ * @return          True if client in water, false otherwise.
+ */
+bool IsClientInWater(int iClient) {
+    return (GetEntProp(iClient, Prop_Send, "m_nWaterLevel") == WATER_LEVEL_EYES);
+}
+
+/**
+ * Returns whether the player is survivor.
+ *
+ * @param iClient   Client index.
+ * @return          True if client is survivor, false otherwise.
  */
 bool IsClientSurvivor(int iClient) {
-	return (GetClientTeam(iClient) == TEAM_SURVIVOR);
+    return (GetClientTeam(iClient) == TEAM_SURVIVOR);
 }
