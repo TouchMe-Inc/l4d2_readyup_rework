@@ -16,7 +16,7 @@ public Plugin myinfo = {
     name        = "ReadyupRework",
     author      = "CanadaRox, TouchMe",
     description = "The plugin allows you to control the moment the round starts",
-    version     = "build0004",
+    version     = "build0005",
     url         = "https://github.com/TouchMe-Inc/l4d2_readyup_rework"
 };
 
@@ -52,12 +52,12 @@ public Plugin myinfo = {
 #define WATER_LEVEL_EYES         3
 
 
-enum Mode
+enum ReadyupMode
 {
-    Mode_AlwaysReady = 0,
-    Mode_AutoStart,
-    Mode_PlayerReady,
-    Mode_TeamReady
+    ReadyupMode_AlwaysReady = 0,
+    ReadyupMode_AutoStart,
+    ReadyupMode_PlayerReady,
+    ReadyupMode_TeamReady
 }
 
 enum ReadyupState
@@ -115,8 +115,8 @@ char
 ;
 
 int
-    g_iDelay = 0,
-    g_iTimer = 0,
+    g_iStartDelay = 0,
+    g_iCountdownTimer = 0,
     g_iAutoStartDelay = 0,
     g_iAutoStartTimer = 0
 ;
@@ -141,7 +141,7 @@ bool g_bCasterAvailable = false; /**< Caster System */
 
 ReadyupState g_eReadyupState = ReadyupState_None;
 
-Mode g_eMode = Mode_AlwaysReady;
+ReadyupMode g_eReadyupMode = ReadyupMode_AlwaysReady;
 
 Handle
     g_hPanelHeader = null,
@@ -231,7 +231,7 @@ any Native_GetReadyState(Handle hPlugin, int iParams) {
 }
 
 any Native_GetReadyMode(Handle hPlugin, int iParams) {
-    return g_eMode;
+    return g_eReadyupMode;
 }
 
 any Native_IsClientReady(Handle hPlugin, int iParams)
@@ -435,14 +435,14 @@ public void OnPluginStart()
     /*
      * Events.
      */
-    HookEvent("round_start", Event_RoundStart, EventHookMode_Pre);
+    HookEvent("round_start", Event_RoundStart, EventHookMode_PostNoCopy);
     HookEvent("player_team", Event_PlayerTeam, EventHookMode_Post);
 
     /*
      * Initialize variables with ConVar values.
      */
-    g_eMode = view_as<Mode>(GetConVarInt(g_cvMode));
-    g_iDelay = GetConVarInt(g_cvDelay);
+    g_eReadyupMode = view_as<ReadyupMode>(GetConVarInt(g_cvMode));
+    g_iStartDelay = GetConVarInt(g_cvDelay);
     g_iAutoStartDelay = GetConVarInt(g_cvAutoStartDelay);
     g_fAfkDuration = GetConVarFloat(g_cvAfkDuration);
 
@@ -462,6 +462,10 @@ public void OnPluginStart()
  */
 public void OnPluginEnd()
 {
+    if (!IsReadyStateInProgress()) {
+        return;
+    }
+
     EnableForceStartTime();
     ReturnSurvivorToSaferoom();
 
@@ -474,14 +478,14 @@ public void OnPluginEnd()
  *
  */
 void OnModeChanged(ConVar convar, const char[] sOldValue, const char[] sNewValue) {
-    g_eMode = view_as<Mode>(GetConVarInt(convar));
+    g_eReadyupMode = view_as<ReadyupMode>(GetConVarInt(convar));
 }
 
 /**
  *
  */
 void OnDelayChanged(ConVar convar, const char[] sOldValue, const char[] sNewValue) {
-    g_iDelay = GetConVarInt(convar);
+    g_iStartDelay = GetConVarInt(convar);
 }
 
 /**
@@ -561,16 +565,16 @@ void Event_RoundStart(Event event, const char[] sName, bool bDontBroadcast)
         g_bClientReadyUpVisible[iClient] = true;
     }
 
-    switch (g_eMode)
+    switch (g_eReadyupMode)
     {
-        case Mode_AutoStart: {
+        case ReadyupMode_AutoStart: {
             SetReadyState(ReadyupState_Countdown);
 
             g_iAutoStartTimer = g_iAutoStartDelay;
             CreateTimer(1.0, Timer_AutoStart, .flags = TIMER_FLAG_NO_MAPCHANGE | TIMER_REPEAT);
         }
 
-        case Mode_AlwaysReady: SetReadyState(ReadyupState_Ready);
+        case ReadyupMode_AlwaysReady: SetReadyState(ReadyupState_Ready);
 
         default: SetReadyState(ReadyupState_UnReady);
     }
@@ -584,7 +588,7 @@ void Event_RoundStart(Event event, const char[] sName, bool bDontBroadcast)
  */
 Action Timer_UpdatePanel(Handle timer)
 {
-    if (g_eReadyupState == ReadyupState_None) {
+    if (IsReadyState(ReadyupState_None)) {
         return Plugin_Stop;
     }
 
@@ -636,6 +640,8 @@ Action Timer_AutoStart(Handle timer)
 
     if (g_iAutoStartTimer <= 0)
     {
+        ReturnSurvivorToSaferoom();
+
         PlayLiveSound();
 
         SetReadyState(ReadyupState_Ready);
@@ -702,7 +708,7 @@ Action Timer_PlayerTeam(Handle hTimer, DataPack hPack)
 
     if (IsValidTeam(iOldTeam) || IsValidTeam(iNewTeam))
     {
-        if (IsMode(Mode_PlayerReady)) {
+        if (IsReadyupMode(ReadyupMode_PlayerReady)) {
             SetTeamReady(iNewTeam == TEAM_NONE ? iOldTeam : iNewTeam, false);
         } else {
             SetClientReady(iClient, false);
@@ -737,7 +743,7 @@ Action Timer_Countdown(Handle timer)
         return Plugin_Stop;
     }
 
-    if (g_iTimer <= 0)
+    if (g_iCountdownTimer <= 0)
     {
         PrintHintTextToAll("%t", "END_COUNTDOWN");
 
@@ -750,7 +756,7 @@ Action Timer_Countdown(Handle timer)
         return Plugin_Stop;
     }
 
-    PrintHintTextToAll("%t", "START_COUNTDOWN", g_iTimer --);
+    PrintHintTextToAll("%t", "START_COUNTDOWN", g_iCountdownTimer --);
     PlayCountdownSound();
 
     return Plugin_Continue;
@@ -837,7 +843,7 @@ Action Cmd_Ready(int iClient, int iArgs)
 
     PlayNotifySound(iClient);
 
-    if (IsMode(Mode_PlayerReady)) {
+    if (IsReadyupMode(ReadyupMode_PlayerReady)) {
         SetTeamReady(iTeam, true);
     } else {
         SetClientReady(iClient, true);
@@ -847,7 +853,7 @@ Action Cmd_Ready(int iClient, int iArgs)
     {
         SetReadyState(ReadyupState_Countdown);
 
-        g_iTimer = g_iDelay;
+        g_iCountdownTimer = g_iStartDelay;
         CreateTimer(1.0, Timer_Countdown, .flags = TIMER_FLAG_NO_MAPCHANGE | TIMER_REPEAT);
     }
 
@@ -893,7 +899,7 @@ Action Cmd_Unready(int iClient, int iArgs)
 
     PlayNotifySound(iClient);
 
-    if (IsMode(Mode_PlayerReady)) {
+    if (IsReadyupMode(ReadyupMode_PlayerReady)) {
         SetTeamReady(iTeam, false);
     } else {
         SetClientReady(iClient, false);
@@ -1021,13 +1027,13 @@ Panel BuildPanel(int iClient)
     /*
      * Body.
      */
-    if (g_eReadyupState != ReadyupState_Ready)
+    if (!IsReadyState(ReadyupState_Ready))
     {
-        switch (g_eMode)
+        switch (g_eReadyupMode)
         {
-            case Mode_AutoStart: DrawPanelBodyForAutoStart(hPanel, iClient);
-            case Mode_PlayerReady: DrawPanelBodyForPlayerReady(hPanel, iClient);
-            case Mode_TeamReady: DrawPanelBodyForTeamReady(hPanel, iClient);
+            case ReadyupMode_AutoStart: DrawPanelBodyForAutoStart(hPanel, iClient);
+            case ReadyupMode_PlayerReady: DrawPanelBodyForPlayerReady(hPanel, iClient);
+            case ReadyupMode_TeamReady: DrawPanelBodyForTeamReady(hPanel, iClient);
         }
     }
 
@@ -1282,7 +1288,7 @@ bool IsTeamReady(int iTeam)
 /**
  *
  */
-bool SetTeamReady(int iTeam, bool bReady)
+void SetTeamReady(int iTeam, bool bReady)
 {
     for (int iClient = 1; iClient <= MaxClients; iClient++)
     {
@@ -1292,8 +1298,6 @@ bool SetTeamReady(int iTeam, bool bReady)
 
         SetClientReady(iClient, bReady);
     }
-
-    return true;
 }
 
 /**
@@ -1352,15 +1356,15 @@ void EnableForceStartTime() {
     L4D2_CTimerStart(L4D2CT_VersusStartTimer, GetConVarFloat(g_cvForceStartTime));
 }
 
-bool IsMode(Mode eMode) {
-    return (g_eMode == eMode);
+bool IsReadyupMode(ReadyupMode eMode) {
+    return (g_eReadyupMode == eMode);
 }
 
 /**
  *
  */
 bool IsModeNeedClientAction() {
-    return (IsMode(Mode_PlayerReady) || IsMode(Mode_TeamReady));
+    return (IsReadyupMode(ReadyupMode_PlayerReady) || IsReadyupMode(ReadyupMode_TeamReady));
 }
 
 /**
@@ -1368,7 +1372,7 @@ bool IsModeNeedClientAction() {
  */
 void SetReadyState(ReadyupState eReadyupState)
 {
-    if (g_eReadyupState != eReadyupState) {
+    if (!IsReadyState(eReadyupState)) {
         ExecuteForward_OnChangeReadyState(g_eReadyupState, eReadyupState);
     }
 

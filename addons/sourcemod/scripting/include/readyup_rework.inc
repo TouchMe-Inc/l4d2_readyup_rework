@@ -3,12 +3,12 @@
 #endif
 #define _readyup_rework_included_
 
-enum Mode
+enum ReadyupMode
 {
-	Mode_AlwaysReady = 0,
-	Mode_AutoStart,
-	Mode_PlayerReady,
-	Mode_TeamReady
+    ReadyupMode_AlwaysReady = 0,
+    ReadyupMode_AutoStart,
+    ReadyupMode_PlayerReady,
+    ReadyupMode_TeamReady
 }
 
 enum ReadyupState
@@ -33,11 +33,11 @@ native ReadyupState GetReadyState();
 /**
  * Returns the current mode.
  */
-native Mode GetReadyMode();
+native ReadyupMode GetReadyMode();
 
 /**
  * Returns whether the player is marked as ready to play.
- * In Mode_PlayerReady mode, returns true if the player's command is ready.
+ * In ReadyupMode_PlayerReady mode, returns true if the player's command is ready.
  */
 native bool IsClientReady(int iClient);
 
