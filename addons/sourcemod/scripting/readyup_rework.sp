@@ -13,10 +13,10 @@
 
 
 public Plugin myinfo = {
-    name        = "ReadyupRework",
+    name        = "PauseRework",
     author      = "CanadaRox, TouchMe",
     description = "The plugin allows you to control the moment the round starts",
-    version     = "build0005",
+    version     = "build0006",
     url         = "https://github.com/TouchMe-Inc/l4d2_readyup_rework"
 };
 
@@ -93,7 +93,7 @@ ConVar
     g_cvInfinitePrimaryAmmo = null,
     g_cvForceStartTime = null,
 
-    g_cvMode = null,
+    g_cvReadyupMode = null,
     g_cvDelay = null,
     g_cvAutoStartDelay = null,
     g_cvAfkDuration = null,
@@ -400,7 +400,7 @@ public void OnPluginStart()
     g_cvSoundCountdown = CreateConVar("sm_readyup_sound_countdown", DEFAULT_COUNTDOWN_SOUND, "The sound that plays when a round goes on countdown");
     g_cvSoundLive = CreateConVar("sm_readyup_sound_live", DEFAULT_LIVE_SOUND, "The sound that plays when a round goes live");
 
-    g_cvMode = CreateConVar("sm_readyup_mode", "2", "Plugin operating mode (Values: 0 = Disabled, 1 = Auto start, 2 = Player ready, 3 = Team ready)", _, true, 0.0, true, 3.0);
+    g_cvReadyupMode = CreateConVar("sm_readyup_mode", "2", "Plugin operating mode (Values: 0 = Disabled, 1 = Auto start, 2 = Player ready, 3 = Team ready)", _, true, 0.0, true, 3.0);
     g_cvDelay = CreateConVar("sm_readyup_delay", "3", "Number of seconds to count down before the round goes live", _, true, 0.0);
     g_cvAutoStartDelay = CreateConVar("sm_readyup_autostart_delay", "20.0", "Number of seconds before forced automatic start (only sm_readyup_mode 1)", _, true, 0.0);
     g_cvAfkDuration = CreateConVar("sm_readyup_afk_duration", "15.0", "Number of seconds since the player's last activity to count his afk", _, true, 1.0);
@@ -412,7 +412,7 @@ public void OnPluginStart()
     /*
      * Register ConVar change callbacks.
      */
-    HookConVarChange(g_cvMode, OnModeChanged);
+    HookConVarChange(g_cvReadyupMode, OnModeChanged);
     HookConVarChange(g_cvDelay, OnDelayChanged);
     HookConVarChange(g_cvAutoStartDelay, OnAutoStartDelayChanged);
     HookConVarChange(g_cvAfkDuration, OnAfkDurationChanged);
@@ -441,7 +441,7 @@ public void OnPluginStart()
     /*
      * Initialize variables with ConVar values.
      */
-    g_eReadyupMode = view_as<ReadyupMode>(GetConVarInt(g_cvMode));
+    g_eReadyupMode = view_as<ReadyupMode>(GetConVarInt(g_cvReadyupMode));
     g_iStartDelay = GetConVarInt(g_cvDelay);
     g_iAutoStartDelay = GetConVarInt(g_cvAutoStartDelay);
     g_fAfkDuration = GetConVarFloat(g_cvAfkDuration);
@@ -743,10 +743,8 @@ Action Timer_Countdown(Handle timer)
         return Plugin_Stop;
     }
 
-    if (g_iCountdownTimer <= 0)
+    if (-- g_iCountdownTimer <= 0)
     {
-        PrintHintTextToAll("%t", "END_COUNTDOWN");
-
         ReturnSurvivorToSaferoom();
 
         PlayLiveSound();
@@ -756,12 +754,10 @@ Action Timer_Countdown(Handle timer)
         return Plugin_Stop;
     }
 
-    PrintHintTextToAll("%t", "START_COUNTDOWN", g_iCountdownTimer --);
     PlayCountdownSound();
 
     return Plugin_Continue;
 }
-
 
 /**
  *
@@ -834,7 +830,7 @@ Action Cmd_Ready(int iClient, int iArgs)
         CPrintToChat(iClient, "%T%T", "TAG", iClient, "STOP_SPAM_COMMAND", iClient, GetClientCommandSpamCooldown(iClient));
         return Plugin_Handled;
     }
-    
+
     else if (iSpamCommand == 1)
     {
         CPrintToChat(iClient, "%T%T", "TAG", iClient, "STOP_SPAM_COMMAND_WITH_INC", iClient, GetClientCommandSpamCooldown(iClient), g_fSpamCooldownIncrement);
@@ -890,7 +886,7 @@ Action Cmd_Unready(int iClient, int iArgs)
         CPrintToChat(iClient, "%T%T", "TAG", iClient, "STOP_SPAM_COMMAND", iClient, GetClientCommandSpamCooldown(iClient));
         return Plugin_Handled;
     }
-    
+
     else if (iSpamCommand == 1)
     {
         CPrintToChat(iClient, "%T%T", "TAG", iClient, "STOP_SPAM_COMMAND_WITH_INC", iClient, GetClientCommandSpamCooldown(iClient), g_fSpamCooldownIncrement);
@@ -908,7 +904,7 @@ Action Cmd_Unready(int iClient, int iArgs)
     if (IsReadyState(ReadyupState_Countdown))
     {
         SetReadyState(ReadyupState_UnReady);
-        
+
         char sPlayerName[MAX_NAME_LENGTH];
 
         for (int iPlayer = 1; iPlayer <= MaxClients; iPlayer ++)
@@ -1080,6 +1076,12 @@ void DrawPanelBodyForAutoStart(Handle hPanel, int iClient)
 
 void DrawPanelBodyForPlayerReady(Handle hPanel, int iClient)
 {
+    if (IsReadyState(ReadyupState_Countdown))
+    {
+        DrawPanelFormatText(hPanel, "%T", "START_COUNTDOWN", iClient, g_iCountdownTimer);
+        return;
+    }
+
     char sPanelMarkReady[16]; FormatEx(sPanelMarkReady, sizeof(sPanelMarkReady), "%T", "PANEL_MARK_READY", iClient);
     char sPanelMarkUnready[16]; FormatEx(sPanelMarkUnready, sizeof(sPanelMarkUnready), "%T", "PANEL_MARK_UNREADY", iClient);
     char sPanelMarkAfk[16]; FormatEx(sPanelMarkAfk, sizeof(sPanelMarkAfk), "%T", "PANEL_MARK_AFK", iClient);
@@ -1119,6 +1121,12 @@ void DrawPanelBodyForPlayerReady(Handle hPanel, int iClient)
 
 void DrawPanelBodyForTeamReady(Handle hPanel, int iClient)
 {
+    if (IsReadyState(ReadyupState_Countdown))
+    {
+        DrawPanelFormatText(hPanel, "%T", "START_COUNTDOWN", iClient, g_iCountdownTimer);
+        return;
+    }
+
     char PANEL_BLOCK_NAME[][] = {
         "PANEL_SURVIVOR_TEAM", "PANEL_INFECTED_TEAM", "PANEL_CASTER_TEAM"
     };
@@ -1243,7 +1251,7 @@ int IsClientSpamCommand(int iClient)
 
         return 0;
     }
-    
+
     g_fClientCommandSpamCooldown[iClient] = fCurrentTime + g_fSpamCooldownInitial; // Set cooldown
     g_iClientCommandSpamAttempts[iClient] = 0; // Reset spam attempts
 
