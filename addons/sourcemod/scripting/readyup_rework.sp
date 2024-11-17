@@ -1078,7 +1078,7 @@ void DrawPanelBodyForPlayerReady(Handle hPanel, int iClient)
 {
     if (IsReadyState(ReadyupState_Countdown))
     {
-        DrawPanelFormatText(hPanel, "%T", "START_COUNTDOWN", iClient, g_iCountdownTimer);
+        DrawPanelFormatText(hPanel, "%T", "PANEL_COUNTDOWN", iClient, g_iCountdownTimer);
         return;
     }
 
@@ -1123,7 +1123,7 @@ void DrawPanelBodyForTeamReady(Handle hPanel, int iClient)
 {
     if (IsReadyState(ReadyupState_Countdown))
     {
-        DrawPanelFormatText(hPanel, "%T", "START_COUNTDOWN", iClient, g_iCountdownTimer);
+        DrawPanelFormatText(hPanel, "%T", "PANEL_COUNTDOWN", iClient, g_iCountdownTimer);
         return;
     }
 

@@ -5,15 +5,10 @@
         "en"            "<{green}ReadyUp{default}> "
     }
 
-    "START_COUNTDOWN"
+    "PANEL_COUNTDOWN"
     {
         "#format"       "{1:d}"
         "en"            "Countdown: {1} sec"
-    }
-
-    "END_COUNTDOWN"
-    {
-        "en"            "Now the survivors can leave the safe room"
     }
 
     "STOP_COUNTDOWN_PLAYER_DISCONNECT"
