@@ -121,6 +121,8 @@ int
     g_iAutoStartTimer = 0
 ;
 
+bool g_bHasPlayerLoading = true;
+
 float g_fAfkDuration = 0.0;
 
 float g_fLastClientActivityTime[MAXPLAYERS + 1] = {0.0, ...};
@@ -565,6 +567,12 @@ void Event_RoundStart(Event event, const char[] sName, bool bDontBroadcast)
         g_bClientReadyUpVisible[iClient] = true;
     }
 
+    if (!InSecondHalfOfRound())
+    {
+        g_bHasPlayerLoading = true;
+        CreateTimer(1.0, Timer_HasPlayerLoading, .flags = TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE);
+    }
+
     switch (g_eReadyupMode)
     {
         case ReadyupMode_AutoStart: {
@@ -581,6 +589,20 @@ void Event_RoundStart(Event event, const char[] sName, bool bDontBroadcast)
 
     // Show panel.
     CreateTimer(1.0, Timer_UpdatePanel, .flags = TIMER_FLAG_NO_MAPCHANGE | TIMER_REPEAT);
+}
+
+/**
+ *
+ */
+Action Timer_HasPlayerLoading(Handle timer)
+{
+    if (IsAnyPlayerLoading()) {
+        return Plugin_Continue;
+    }
+
+    g_bHasPlayerLoading = false;
+
+    return Plugin_Stop;
 }
 
 /**
@@ -634,11 +656,11 @@ Action Timer_AutoStart(Handle timer)
         return Plugin_Continue;
     }
 
-    if (IsAnyPlayerLoading()) {
+    if (g_bHasPlayerLoading) {
         return Plugin_Continue;
     }
 
-    if (g_iAutoStartTimer <= 0)
+    if (g_iAutoStartTimer-- <= 0)
     {
         ReturnSurvivorToSaferoom();
 
@@ -648,8 +670,6 @@ Action Timer_AutoStart(Handle timer)
 
         return Plugin_Stop;
     }
-
-    g_iAutoStartTimer --;
 
     return Plugin_Continue;
 }
@@ -743,7 +763,7 @@ Action Timer_Countdown(Handle timer)
         return Plugin_Stop;
     }
 
-    if (-- g_iCountdownTimer <= 0)
+    if (g_iCountdownTimer-- <= 0)
     {
         ReturnSurvivorToSaferoom();
 
@@ -788,7 +808,7 @@ Action Cmd_TogglePanel(int iClient, int iArgs)
  */
 Action Cmd_ReturnToSaferoom(int iClient, int iArgs)
 {
-    if (!IsReadyStateInProgress()) {
+    if (IsReadyState(ReadyupState_None)) {
         return Plugin_Continue;
     }
 
@@ -823,18 +843,19 @@ Action Cmd_Ready(int iClient, int iArgs)
         return Plugin_Handled;
     }
 
-    int iSpamCommand = IsClientSpamCommand(iClient);
-
-    if (iSpamCommand == 0)
+    switch (IsClientSpamCommand(iClient))
     {
-        CPrintToChat(iClient, "%T%T", "TAG", iClient, "STOP_SPAM_COMMAND", iClient, GetClientCommandSpamCooldown(iClient));
-        return Plugin_Handled;
-    }
+        case 0:
+        {
+            CPrintToChat(iClient, "%T%T", "TAG", iClient, "STOP_SPAM_COMMAND", iClient, GetClientCommandSpamCooldown(iClient));
+            return Plugin_Handled;
+        }
 
-    else if (iSpamCommand == 1)
-    {
-        CPrintToChat(iClient, "%T%T", "TAG", iClient, "STOP_SPAM_COMMAND_WITH_INC", iClient, GetClientCommandSpamCooldown(iClient), g_fSpamCooldownIncrement);
-        return Plugin_Handled;
+        case 1:
+        {
+            CPrintToChat(iClient, "%T%T", "TAG", iClient, "STOP_SPAM_COMMAND_WITH_INC", iClient, GetClientCommandSpamCooldown(iClient), g_fSpamCooldownIncrement);
+            return Plugin_Handled;
+        }
     }
 
     PlayNotifySound(iClient);
@@ -879,18 +900,19 @@ Action Cmd_Unready(int iClient, int iArgs)
         return Plugin_Handled;
     }
 
-    int iSpamCommand = IsClientSpamCommand(iClient);
-
-    if (iSpamCommand == 0)
+    switch (IsClientSpamCommand(iClient))
     {
-        CPrintToChat(iClient, "%T%T", "TAG", iClient, "STOP_SPAM_COMMAND", iClient, GetClientCommandSpamCooldown(iClient));
-        return Plugin_Handled;
-    }
+        case 0:
+        {
+            CPrintToChat(iClient, "%T%T", "TAG", iClient, "STOP_SPAM_COMMAND", iClient, GetClientCommandSpamCooldown(iClient));
+            return Plugin_Handled;
+        }
 
-    else if (iSpamCommand == 1)
-    {
-        CPrintToChat(iClient, "%T%T", "TAG", iClient, "STOP_SPAM_COMMAND_WITH_INC", iClient, GetClientCommandSpamCooldown(iClient), g_fSpamCooldownIncrement);
-        return Plugin_Handled;
+        case 1:
+        {
+            CPrintToChat(iClient, "%T%T", "TAG", iClient, "STOP_SPAM_COMMAND_WITH_INC", iClient, GetClientCommandSpamCooldown(iClient), g_fSpamCooldownIncrement);
+            return Plugin_Handled;
+        }
     }
 
     PlayNotifySound(iClient);
@@ -961,7 +983,7 @@ public void OnPlayerRunCmdPost(int iClient, int iButtons, int iImpulse,
     const float vel[3], const float angles[3], int weapon, int subtype,
     int cmdnum, int tickcount, int seed, const int iMouse[2])
 {
-    if (!IsReadyStateInProgress()) {
+    if (IsReadyState(ReadyupState_None)) {
         return;
     }
 
@@ -1067,7 +1089,7 @@ int DummyHandler(Handle menu, MenuAction action, int param1, int param2) { retur
 
 void DrawPanelBodyForAutoStart(Handle hPanel, int iClient)
 {
-    if (IsAnyPlayerLoading()) {
+    if (g_bHasPlayerLoading) {
         DrawPanelFormatText(hPanel, "%T", "PANEL_AUTOSTART_CONNECTING_DELAY", iClient);
     } else {
         DrawPanelFormatText(hPanel, "%T", "PANEL_AUTOSTART_TIMER", iClient, g_iAutoStartTimer + 1);
@@ -1078,7 +1100,7 @@ void DrawPanelBodyForPlayerReady(Handle hPanel, int iClient)
 {
     if (IsReadyState(ReadyupState_Countdown))
     {
-        DrawPanelFormatText(hPanel, "%T", "PANEL_COUNTDOWN", iClient, g_iCountdownTimer);
+        DrawPanelFormatText(hPanel, "%T", "PANEL_COUNTDOWN", iClient, g_iCountdownTimer + 1);
         return;
     }
 
@@ -1626,6 +1648,15 @@ int IsEmptyServer()
     }
 
     return true;
+}
+
+/**
+ * Checks if the current round is the second half.
+ *
+ * @return true if it is the second half of the round, false otherwise.
+ */
+bool InSecondHalfOfRound() {
+    return view_as<bool>(GameRules_GetProp("m_bInSecondHalfOfRound"));
 }
 
 /**
