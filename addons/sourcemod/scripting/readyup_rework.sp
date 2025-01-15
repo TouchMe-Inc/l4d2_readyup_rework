@@ -16,7 +16,7 @@ public Plugin myinfo = {
     name        = "PauseRework",
     author      = "CanadaRox, TouchMe",
     description = "The plugin allows you to control the moment the round starts",
-    version     = "build0006",
+    version     = "build_0007",
     url         = "https://github.com/TouchMe-Inc/l4d2_readyup_rework"
 };
 
@@ -121,7 +121,7 @@ int
     g_iAutoStartTimer = 0
 ;
 
-bool g_bHasPlayerLoading = true;
+int g_iPlayerLoading = 0;
 
 float g_fAfkDuration = 0.0;
 
@@ -569,8 +569,8 @@ void Event_RoundStart(Event event, const char[] sName, bool bDontBroadcast)
 
     if (!InSecondHalfOfRound())
     {
-        g_bHasPlayerLoading = true;
-        CreateTimer(1.0, Timer_HasPlayerLoading, .flags = TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE);
+        g_iPlayerLoading = GetPlayerLoading();
+        CreateTimer(1.0, Timer_HasPlayerLoading, .flags = TIMER_FLAG_NO_MAPCHANGE | TIMER_REPEAT);
     }
 
     switch (g_eReadyupMode)
@@ -596,11 +596,11 @@ void Event_RoundStart(Event event, const char[] sName, bool bDontBroadcast)
  */
 Action Timer_HasPlayerLoading(Handle timer)
 {
-    if (IsAnyPlayerLoading()) {
+    g_iPlayerLoading = GetPlayerLoading();
+
+    if (g_iPlayerLoading > 0) {
         return Plugin_Continue;
     }
-
-    g_bHasPlayerLoading = false;
 
     return Plugin_Stop;
 }
@@ -656,7 +656,7 @@ Action Timer_AutoStart(Handle timer)
         return Plugin_Continue;
     }
 
-    if (g_bHasPlayerLoading) {
+    if (g_iPlayerLoading > 0) {
         return Plugin_Continue;
     }
 
@@ -829,6 +829,10 @@ Action Cmd_Ready(int iClient, int iArgs)
         return Plugin_Continue;
     }
 
+    if (g_iPlayerLoading > 0) {
+        return Plugin_Continue;
+    }
+
     if (!iClient || !IsClientInGame(iClient)) {
         return Plugin_Continue;
     }
@@ -883,6 +887,10 @@ Action Cmd_Ready(int iClient, int iArgs)
 Action Cmd_Unready(int iClient, int iArgs)
 {
     if (!IsReadyStateInProgress() || !IsModeNeedClientAction()) {
+        return Plugin_Continue;
+    }
+
+    if (g_iPlayerLoading > 0) {
         return Plugin_Continue;
     }
 
@@ -1089,8 +1097,8 @@ int DummyHandler(Handle menu, MenuAction action, int param1, int param2) { retur
 
 void DrawPanelBodyForAutoStart(Handle hPanel, int iClient)
 {
-    if (g_bHasPlayerLoading) {
-        DrawPanelFormatText(hPanel, "%T", "PANEL_AUTOSTART_CONNECTING_DELAY", iClient);
+    if (g_iPlayerLoading > 0) {
+        DrawPanelFormatText(hPanel, "%T", "PANEL_CONNECTING_DELAY", iClient, g_iPlayerLoading);
     } else {
         DrawPanelFormatText(hPanel, "%T", "PANEL_AUTOSTART_TIMER", iClient, g_iAutoStartTimer + 1);
     }
@@ -1098,6 +1106,12 @@ void DrawPanelBodyForAutoStart(Handle hPanel, int iClient)
 
 void DrawPanelBodyForPlayerReady(Handle hPanel, int iClient)
 {
+    if (g_iPlayerLoading > 0)
+    {
+        DrawPanelFormatText(hPanel, "%T", "PANEL_CONNECTING_DELAY", iClient, g_iPlayerLoading);
+        return;
+    }
+
     if (IsReadyState(ReadyupState_Countdown))
     {
         DrawPanelFormatText(hPanel, "%T", "PANEL_COUNTDOWN", iClient, g_iCountdownTimer + 1);
@@ -1143,6 +1157,12 @@ void DrawPanelBodyForPlayerReady(Handle hPanel, int iClient)
 
 void DrawPanelBodyForTeamReady(Handle hPanel, int iClient)
 {
+    if (g_iPlayerLoading > 0)
+    {
+        DrawPanelFormatText(hPanel, "%T", "PANEL_CONNECTING_DELAY", iClient, g_iPlayerLoading);
+        return;
+    }
+
     if (IsReadyState(ReadyupState_Countdown))
     {
         DrawPanelFormatText(hPanel, "%T", "PANEL_COUNTDOWN", iClient, g_iCountdownTimer);
@@ -1617,18 +1637,20 @@ void ReturnClientToSaferoom(int iClient)
 /**
  * Determine if a player is connecting.
  *
- * @return          True if there are connecting players, false otherwise.
+ * @return          Player count.
  */
-bool IsAnyPlayerLoading()
+int GetPlayerLoading()
 {
+    int iPlayers = 0;
+
     for (int iClient = 1; iClient <= MaxClients; iClient ++)
     {
         if (IsClientConnected(iClient) && (!IsClientInGame(iClient) || GetClientTeam(iClient) == TEAM_NONE)) {
-            return true;
+            iPlayers ++;
         }
     }
 
-    return false;
+    return iPlayers;
 }
 
 /**

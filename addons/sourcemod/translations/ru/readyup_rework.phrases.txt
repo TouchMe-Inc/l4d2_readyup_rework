@@ -52,12 +52,12 @@
 
     "PANEL_MARK_READY"
     {
-        "ru"             "■"
+        "ru"             "▣"
     }
 
     "PANEL_MARK_UNREADY"
     {
-        "ru"             "□"
+        "ru"             "▢"
     }
 
     "PANEL_MARK_AFK"
@@ -71,9 +71,10 @@
         "ru"             "{1} {2}{3}"
     }
 
-    "PANEL_AUTOSTART_CONNECTING_DELAY"
+    "PANEL_CONNECTING_DELAY"
     {
-        "ru"             "Загрузка игроков..."
+        "#format"       "{1:d}"
+        "ru"             "Загрузка {1} игроков..."
     }
 
     "PANEL_AUTOSTART_TIMER"
@@ -84,7 +85,7 @@
 
     "PANEL_ALREADY_READY"
     {
-        "ru"             "Раунд начнётся, когда выжившие покинут убежище"
+        "ru"             "Раунд начнётся, когда\nвыжившие покинут убежище"
     }
 
     "STOP_SPAM_COMMAND"

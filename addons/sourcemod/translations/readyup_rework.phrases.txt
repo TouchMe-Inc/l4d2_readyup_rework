@@ -52,12 +52,12 @@
 
     "PANEL_MARK_READY"
     {
-        "en"            "■"
+        "en"            "▣"
     }
 
     "PANEL_MARK_UNREADY"
     {
-        "en"            "□"
+        "en"            "▢"
     }
 
     "PANEL_MARK_AFK"
@@ -71,9 +71,10 @@
         "en"            "{1} {2}{3}"
     }
 
-    "PANEL_AUTOSTART_CONNECTING_DELAY"
+    "PANEL_CONNECTING_DELAY"
     {
-        "en"            "Loading players..."
+        "#format"       "{1:d}"
+        "en"            "Loading {1} players..."
     }
 
     "PANEL_AUTOSTART_TIMER"
@@ -84,7 +85,7 @@
 
     "PANEL_ALREADY_READY"
     {
-        "en"            "The round will start when the survivors leave the safe room"
+        "en"            "The round will start when\nthe survivors leave the safe room"
     }
 
     "STOP_SPAM_COMMAND"
