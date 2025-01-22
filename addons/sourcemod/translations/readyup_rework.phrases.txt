@@ -29,6 +29,16 @@
         "en"            "Countdown interrupted: {olive}{1}{default} not ready"
     }
 
+    "PANEL_DISABLED"
+    {
+        "en"            "The panel is {olive}hidden"
+    }
+
+    "PANEL_ENABLED"
+    {
+        "en"            "The panel is {olive}shown"
+    }
+
     "PANEL_BLOCK_TEAM"
     {
         "#format"       "{1:d},{2:s}"

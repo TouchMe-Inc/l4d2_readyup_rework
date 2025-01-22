@@ -427,11 +427,11 @@ public void OnPluginStart()
      * Player Commands.
      */
     RegConsoleCmd("sm_readyup", Cmd_TogglePanel, "Show/hide the readyup panel");
-    RegConsoleCmd("sm_return", Cmd_ReturnToSaferoom, "Return to a valid saferoom spawn if you get stuck during an unfrozen ready-up period");
-    RegConsoleCmd("sm_ready", Cmd_Ready, "Mark yourself as ready for the round to go live");
-    RegConsoleCmd("sm_r", Cmd_Ready, "Mark yourself as ready for the round to go live");
+    RegConsoleCmd("sm_return",  Cmd_ReturnToSaferoom, "Return to a valid saferoom spawn if you get stuck during an unfrozen ready-up period");
+    RegConsoleCmd("sm_ready",   Cmd_Ready, "Mark yourself as ready for the round to go live");
+    RegConsoleCmd("sm_r",       Cmd_Ready, "Mark yourself as ready for the round to go live");
     RegConsoleCmd("sm_unready", Cmd_Unready, "Mark yourself as not ready if you have set yourself as ready");
-    RegConsoleCmd("sm_nr", Cmd_Unready, "Mark yourself as not ready if you have set yourself as ready");
+    RegConsoleCmd("sm_nr",      Cmd_Unready, "Mark yourself as not ready if you have set yourself as ready");
     AddCommandListener(Vote_Callback, "Vote"); // Hook vote <KEY_F1> or <KEY_F2>.
 
     /*
@@ -464,10 +464,6 @@ public void OnPluginStart()
  */
 public void OnPluginEnd()
 {
-    if (!IsReadyStateInProgress()) {
-        return;
-    }
-
     EnableForceStartTime();
     ReturnSurvivorToSaferoom();
 
@@ -479,50 +475,50 @@ public void OnPluginEnd()
 /**
  *
  */
-void OnModeChanged(ConVar convar, const char[] sOldValue, const char[] sNewValue) {
-    g_eReadyupMode = view_as<ReadyupMode>(GetConVarInt(convar));
+void OnModeChanged(ConVar cv, const char[] szOldValue, const char[] szNewValue) {
+    g_eReadyupMode = view_as<ReadyupMode>(GetConVarInt(cv));
 }
 
 /**
  *
  */
-void OnDelayChanged(ConVar convar, const char[] sOldValue, const char[] sNewValue) {
-    g_iStartDelay = GetConVarInt(convar);
+void OnDelayChanged(ConVar cv, const char[] szOldValue, const char[] szNewValue) {
+    g_iStartDelay = GetConVarInt(cv);
 }
 
 /**
  *
  */
-void OnAutoStartDelayChanged(ConVar convar, const char[] sOldValue, const char[] sNewValue) {
-    g_iAutoStartDelay = GetConVarInt(convar);
+void OnAutoStartDelayChanged(ConVar cv, const char[] szOldValue, const char[] szNewValue) {
+    g_iAutoStartDelay = GetConVarInt(cv);
 }
 
 /**
  *
  */
-void OnAfkDurationChanged(ConVar convar, const char[] sOldValue, const char[] sNewValue) {
-    g_fAfkDuration = GetConVarFloat(convar);
+void OnAfkDurationChanged(ConVar cv, const char[] szOldValue, const char[] szNewValue) {
+    g_fAfkDuration = GetConVarFloat(cv);
 }
 
 /**
  *
  */
-void OnInitialSpamCooldownChanged(ConVar convar, const char[] oldValue, const char[] newValue) {
-    g_fSpamCooldownInitial = GetConVarFloat(convar);
+void OnInitialSpamCooldownChanged(ConVar cv, const char[] szOldValue, const char[] szNewValue) {
+    g_fSpamCooldownInitial = GetConVarFloat(cv);
 }
 
 /**
  *
  */
-void OnSpamCooldownIncrementChanged(ConVar convar, const char[] oldValue, const char[] newValue) {
-    g_fSpamCooldownIncrement = GetConVarFloat(convar);
+void OnSpamCooldownIncrementChanged(ConVar cv, const char[] szOldValue, const char[] szNewValue) {
+    g_fSpamCooldownIncrement = GetConVarFloat(cv);
 }
 
 /**
  *
  */
-void OnMaxAttemptsBeforeIncementChanged(ConVar convar, const char[] oldValue, const char[] newValue) {
-    g_iMaxAttempts = GetConVarInt(convar);
+void OnMaxAttemptsBeforeIncementChanged(ConVar cv, const char[] szOldValue, const char[] szNewValue) {
+    g_iMaxAttempts = GetConVarInt(cv);
 }
 
 /**
@@ -784,10 +780,6 @@ Action Timer_Countdown(Handle timer)
  */
 Action Cmd_TogglePanel(int iClient, int iArgs)
 {
-    if (!IsReadyStateInProgress()) {
-        return Plugin_Continue;
-    }
-
     if (IsClientReadyUpVisible(iClient))
     {
         SetClientReadyUpVisible(iClient, false);
@@ -1114,7 +1106,7 @@ void DrawPanelBodyForPlayerReady(Handle hPanel, int iClient)
 
     if (IsReadyState(ReadyupState_Countdown))
     {
-        DrawPanelFormatText(hPanel, "%T", "PANEL_COUNTDOWN", iClient, g_iCountdownTimer + 1);
+        DrawPanelFormatText(hPanel, "%T", "PANEL_COUNTDOWN", iClient, g_iCountdownTimer);
         return;
     }
 
