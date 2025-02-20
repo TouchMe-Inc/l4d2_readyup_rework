@@ -74,6 +74,12 @@ enum ReadtupEffect // TODO
     ReadtupEffect_InfinityAmmo = (1 << 1)
 }
 
+enum Switcher
+{
+    Enable,
+    Disable
+}
+
 enum PanelPos
 {
     PanelPos_Header = 0,
@@ -91,7 +97,9 @@ ConVar
     g_cvGod = null,
     g_cvPlayerStop = null,
     g_cvInfinitePrimaryAmmo = null,
-    g_cvForceStartTime = null,
+    g_cvVersusForceStartTime = null,
+    g_cvScavengeRoundInitialTime = null,
+    g_cvScavengeRoundSetupTime = null,
 
     g_cvReadyupMode = null,
     g_cvDelay = null,
@@ -395,7 +403,9 @@ public void OnPluginStart()
     g_cvGod = FindConVar("god");
     g_cvPlayerStop = FindConVar("nb_player_stop");
     g_cvInfinitePrimaryAmmo = FindConVar("sv_infinite_primary_ammo");
-    g_cvForceStartTime = FindConVar("versus_force_start_time");
+    g_cvVersusForceStartTime = FindConVar("versus_force_start_time");
+    g_cvScavengeRoundInitialTime = FindConVar("scavenge_round_initial_time");
+    g_cvScavengeRoundSetupTime = FindConVar("scavenge_round_setup_time");
 
     g_cvSoundEnable = CreateConVar("sm_readyup_sound_enable", "1", "Enable sounds played to clients", _, true, 0.0, true, 1.0);
     g_cvSoundNotify = CreateConVar("sm_readyup_sound_notify", DEFAULT_NOTIFY_SOUND, "Path to the sound that is played when the client status changes");
@@ -438,6 +448,7 @@ public void OnPluginStart()
      * Events.
      */
     HookEvent("round_start", Event_RoundStart, EventHookMode_PostNoCopy);
+    HookEvent("survival_round_start", Event_RoundStart, EventHookMode_PostNoCopy);
     HookEvent("player_team", Event_PlayerTeam, EventHookMode_Post);
 
     /*
@@ -464,7 +475,7 @@ public void OnPluginStart()
  */
 public void OnPluginEnd()
 {
-    EnableForceStartTime();
+    SetVersusForceStartTime(Enable);
     ReturnSurvivorToSaferoom();
 
     SetConVarStringSilence(g_cvGod, "0");
@@ -533,7 +544,7 @@ public Action L4D_OnFirstSurvivorLeftSafeArea(int iClient)
         return Plugin_Handled;
     }
 
-    EnableForceStartTime();
+    SetVersusForceStartTime(Enable);
 
     SetConVarStringSilence(g_cvGod, "0");
     SetConVarStringSilence(g_cvInfinitePrimaryAmmo, "0");
@@ -549,7 +560,7 @@ public Action L4D_OnFirstSurvivorLeftSafeArea(int iClient)
  */
 void Event_RoundStart(Event event, const char[] szName, bool bDontBroadcast)
 {
-    DisableForceStartTime();
+    SetVersusForceStartTime(Disable);
 
     // ConVars.
     SetConVarStringSilence(g_cvGod, "1");
@@ -1387,17 +1398,59 @@ bool IsClientAfk(int iClient) {
 /**
  *
  */
-void DisableForceStartTime() {
+void SetVersusForceStartTime(Disable) {
     L4D2_CTimerStart(L4D2CT_VersusStartTimer, 99999.9);
 }
 
 /**
  *
  */
-void EnableForceStartTime() {
-    L4D2_CTimerStart(L4D2CT_VersusStartTimer, GetConVarFloat(g_cvForceStartTime));
+void SetVersusForceStartTime(Enable) {
+    L4D2_CTimerStart(L4D2CT_VersusStartTimer, GetConVarFloat(g_cvVersusForceStartTime));
 }
 
+/**
+ *
+ */
+void SetVersusForceStartTime(Switcher switcher) {
+    L4D2_CTimerStart(L4D2CT_VersusStartTimer, switcher == Enable ? GetConVarFloat(g_cvVersusForceStartTime) : 99999.9);
+}
+
+/**
+ *
+ */
+void SetScavengeRoundSetupTimer(Switcher switcher)
+{
+    CountdownTimer cTimer = L4D2Direct_GetScavengeRoundSetupTimer();
+    
+    if (cTimer == CTimer_Null) {
+        return;
+    }
+
+    CTimer_Start(cTimer, switcher == Enable ? GetConVarFloat(g_cvScavengeRoundSetupTime) : 99999.9);
+    
+    for (int iClient = 1; iClient <= MaxClients; iClient ++)
+    {
+        if (!IsClientInGame(i) || IsFakeClient(i)) {
+            continue;
+        }
+
+        ShowVGUIPanel(iClient, "ready_countdown", _, switcher == Enable);
+    }
+}
+
+/**
+ *
+ */
+void ResetAccumulatedTime()
+{
+    L4D_NotifyNetworkStateChanged();
+    GameRules_SetPropFloat("m_flAccumulatedTime", GetConVarFloat(g_cvScavengeRoundInitialTime));
+}
+
+/*
+ *
+ */
 bool IsReadyupMode(ReadyupMode eMode) {
     return (g_eReadyupMode == eMode);
 }
