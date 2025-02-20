@@ -308,9 +308,9 @@ any Native_PushReadyUpItem(Handle hPlugin, int iParams)
 
     Handle hItems = (ePos == PanelPos_Header) ? g_hPanelHeader : g_hPanelFooter;
 
-    char sBuffer[64]; FormatNativeString(0, 2, 3, sizeof(sBuffer), _, sBuffer);
+    char szBuffer[64]; FormatNativeString(0, 2, 3, sizeof(szBuffer), _, szBuffer);
 
-    return PushArrayString(hItems, sBuffer);
+    return PushArrayString(hItems, szBuffer);
 }
 
 any Native_UpdateReadyUpItem(Handle hPlugin, int iParams)
@@ -327,9 +327,9 @@ any Native_UpdateReadyUpItem(Handle hPlugin, int iParams)
         return ThrowNativeError(SP_ERROR_NATIVE, "Array index out bound");
     }
 
-    char sBuffer[64]; FormatNativeString(0, 3, 4, sizeof(sBuffer), _, sBuffer);
+    char szBuffer[64]; FormatNativeString(0, 3, 4, sizeof(szBuffer), _, szBuffer);
 
-    SetArrayString(hItems, iTargetIndex, sBuffer);
+    SetArrayString(hItems, iTargetIndex, szBuffer);
 
     return 0;
 }
@@ -547,7 +547,7 @@ public Action L4D_OnFirstSurvivorLeftSafeArea(int iClient)
 /**
  *
  */
-void Event_RoundStart(Event event, const char[] sName, bool bDontBroadcast)
+void Event_RoundStart(Event event, const char[] szName, bool bDontBroadcast)
 {
     DisableForceStartTime();
 
@@ -673,7 +673,7 @@ Action Timer_AutoStart(Handle timer)
 /**
  *
  */
-Action Event_PlayerTeam(Event event, const char[] sName, bool bDontBroadcast)
+Action Event_PlayerTeam(Event event, const char[] szName, bool bDontBroadcast)
 {
     if (!IsModeNeedClientAction()) {
         return Plugin_Continue;
@@ -691,13 +691,13 @@ Action Event_PlayerTeam(Event event, const char[] sName, bool bDontBroadcast)
 
     int iOldTeam = GetEventInt(event, "oldteam");
 
-    char sPlayerName[MAX_NAME_LENGTH];
-    GetClientNameFixed(iClient, sPlayerName, sizeof(sPlayerName), 18);
+    char szPlayerName[MAX_NAME_LENGTH];
+    GetClientNameFixed(iClient, szPlayerName, sizeof(szPlayerName), 18);
 
     DataPack hPack = CreateDataPack();
     WritePackCell(hPack, iClient);
     WritePackCell(hPack, iOldTeam);
-    WritePackString(hPack, sPlayerName);
+    WritePackString(hPack, szPlayerName);
 
     CreateTimer(0.1, Timer_PlayerTeam, hPack, TIMER_DATA_HNDL_CLOSE | TIMER_FLAG_NO_MAPCHANGE);
 
@@ -719,8 +719,8 @@ Action Timer_PlayerTeam(Handle hTimer, DataPack hPack)
     int iOldTeam = ReadPackCell(hPack);
     int iNewTeam = IsClientConnected(iClient) ? GetClientTeam(iClient) : TEAM_NONE;
 
-    char sPlayerName[MAX_NAME_LENGTH];
-    ReadPackString(hPack, sPlayerName, sizeof(sPlayerName));
+    char szPlayerName[MAX_NAME_LENGTH];
+    ReadPackString(hPack, szPlayerName, sizeof(szPlayerName));
 
     if (IsValidTeam(iOldTeam) || IsValidTeam(iNewTeam))
     {
@@ -742,7 +742,7 @@ Action Timer_PlayerTeam(Handle hTimer, DataPack hPack)
                     continue;
                 }
 
-                CPrintToChat(iPlayer, "%T%T", "TAG", iPlayer, iNewTeam == TEAM_NONE ? "STOP_COUNTDOWN_PLAYER_DISCONNECT" : "STOP_COUNTDOWN_PLAYER_CHANGE_TEAM", iPlayer, sPlayerName);
+                CPrintToChat(iPlayer, "%T%T", "TAG", iPlayer, iNewTeam == TEAM_NONE ? "STOP_COUNTDOWN_PLAYER_DISCONNECT" : "STOP_COUNTDOWN_PLAYER_CHANGE_TEAM", iPlayer, szPlayerName);
             }
         }
     }
@@ -927,7 +927,7 @@ Action Cmd_Unready(int iClient, int iArgs)
     {
         SetReadyState(ReadyupState_UnReady);
 
-        char sPlayerName[MAX_NAME_LENGTH];
+        char szPlayerName[MAX_NAME_LENGTH];
 
         for (int iPlayer = 1; iPlayer <= MaxClients; iPlayer ++)
         {
@@ -937,9 +937,9 @@ Action Cmd_Unready(int iClient, int iArgs)
                 continue;
             }
 
-            GetClientNameFixed(iClient, sPlayerName, sizeof(sPlayerName), 18);
+            GetClientNameFixed(iClient, szPlayerName, sizeof(szPlayerName), 18);
 
-            CPrintToChat(iPlayer, "%T%T", "TAG", iPlayer, "STOP_COUNTDOWN_PLAYER_UNREADY", iPlayer, sPlayerName);
+            CPrintToChat(iPlayer, "%T%T", "TAG", iPlayer, "STOP_COUNTDOWN_PLAYER_UNREADY", iPlayer, szPlayerName);
         }
     }
 
@@ -1184,24 +1184,24 @@ void DrawPanelBodyForTeamReady(Handle hPanel, int iClient)
     }
 
     int iBlock = 0;
-    char sBlockName[64];
+    char szBlockName[64];
 
-    char sPlayerName[MAX_NAME_LENGTH];
+    char szPlayerName[MAX_NAME_LENGTH];
 
     for (int iTeam = TEAM_SURVIVOR; iTeam <= TEAM_INFECTED; iTeam ++)
     {
-        FormatEx(sBlockName, sizeof(sBlockName), "%T", PANEL_BLOCK_NAME[iBlock], iClient);
+        FormatEx(szBlockName, sizeof(szBlockName), "%T", PANEL_BLOCK_NAME[iBlock], iClient);
 
-        DrawPanelFormatText(hPanel, "%T", "PANEL_BLOCK_TEAM", iClient, iBlock + 1, sBlockName);
+        DrawPanelFormatText(hPanel, "%T", "PANEL_BLOCK_TEAM", iClient, iBlock + 1, szBlockName);
 
         for (int iPlayer = 0; iPlayer < iTotalPlayers[iTeam]; iPlayer ++)
         {
-            GetClientNameFixed(iPlayers[iTeam][iPlayer], sPlayerName, sizeof(sPlayerName), 18);
+            GetClientNameFixed(iPlayers[iTeam][iPlayer], szPlayerName, sizeof(szPlayerName), 18);
 
             DrawPanelFormatText(hPanel, "%T", "PANEL_BLOCK_ITEM", iClient,
                 IsClientReady(iPlayers[iTeam][iPlayer]) ? sPanelMarkReady : sPanelMarkUnready,
                 IsClientAfk(iPlayers[iTeam][iPlayer]) ? sPanelMarkAfk : "",
-                sPlayerName
+                szPlayerName
             );
         }
 
@@ -1229,18 +1229,18 @@ void DrawPanelBodyForTeamReady(Handle hPanel, int iClient)
         if (iTotalCasters > 0)
         {
             DrawPanelSpace(hPanel);
-            FormatEx(sBlockName, sizeof(sBlockName), "%T", PANEL_BLOCK_NAME[iBlock], iClient);
+            FormatEx(szBlockName, sizeof(szBlockName), "%T", PANEL_BLOCK_NAME[iBlock], iClient);
 
-            DrawPanelFormatText(hPanel, "%T", "PANEL_BLOCK_TEAM_SHORT", iClient, iBlock + 1, sBlockName);
+            DrawPanelFormatText(hPanel, "%T", "PANEL_BLOCK_TEAM_SHORT", iClient, iBlock + 1, szBlockName);
 
             for (int iPlayer = 0; iPlayer < iTotalCasters; iPlayer ++)
             {
-                GetClientNameFixed(iCaster[iPlayer], sPlayerName, sizeof(sPlayerName), 18);
+                GetClientNameFixed(iCaster[iPlayer], szPlayerName, sizeof(szPlayerName), 18);
 
                 DrawPanelFormatText(hPanel, "%T", "PANEL_BLOCK_ITEM", iClient,
                     sPanelMarkReady,
                     IsClientAfk(iCaster[iPlayer]) ? sPanelMarkAfk : "",
-                    sPlayerName
+                    szPlayerName
                 );
             }
         }
