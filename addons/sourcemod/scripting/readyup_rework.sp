@@ -449,6 +449,7 @@ public void OnPluginStart()
      */
     HookEvent("round_start", Event_RoundStart, EventHookMode_PostNoCopy);
     HookEvent("survival_round_start", Event_RoundStart, EventHookMode_PostNoCopy);
+    HookEvent("gameinstructor_draw",   Event_GameInstructorDraw, EventHookMode_PostNoCopy);
     HookEvent("player_team", Event_PlayerTeam, EventHookMode_Post);
 
     /*
@@ -544,7 +545,15 @@ public Action L4D_OnFirstSurvivorLeftSafeArea(int iClient)
         return Plugin_Handled;
     }
 
-    SetVersusForceStartTime(Enable);
+    if (L4D2_IsScavengeMode())
+    {
+        SetScavengeRoundSetupTimer(Enable);
+        ResetAccumulatedTime();
+    }
+    else 
+    {
+        SetVersusForceStartTime(Enable);
+    }
 
     SetConVarStringSilence(g_cvGod, "0");
     SetConVarStringSilence(g_cvInfinitePrimaryAmmo, "0");
@@ -560,7 +569,7 @@ public Action L4D_OnFirstSurvivorLeftSafeArea(int iClient)
  */
 void Event_RoundStart(Event event, const char[] szName, bool bDontBroadcast)
 {
-    SetVersusForceStartTime(Disable);
+    CreateTimer(1.0, Timer_DisableGameplayTimers, .flags = TIMER_FLAG_NO_MAPCHANGE);
 
     // ConVars.
     SetConVarStringSilence(g_cvGod, "1");
@@ -680,6 +689,31 @@ Action Timer_AutoStart(Handle timer)
 
     return Plugin_Continue;
 }
+
+/**
+ *
+ */
+void Event_GameInstructorDraw(Event event, const char[] szName, bool bDontBroadcast) {
+    CreateTimer(1.0, Timer_DisableGameplayTimers, .flags = TIMER_FLAG_NO_MAPCHANGE);
+}
+
+/**
+ *
+ */
+ Action Timer_DisableGameplayTimers(Handle timer)
+ {
+    if (L4D2_IsScavengeMode())
+    {
+        SetScavengeRoundSetupTimer(Disable);
+        ResetAccumulatedTime();
+    }
+    else 
+    {
+        SetVersusForceStartTime(Disable);
+    }
+
+    return Plugin_Stop;
+ }
 
 /**
  *
@@ -1398,20 +1432,6 @@ bool IsClientAfk(int iClient) {
 /**
  *
  */
-void SetVersusForceStartTime(Disable) {
-    L4D2_CTimerStart(L4D2CT_VersusStartTimer, 99999.9);
-}
-
-/**
- *
- */
-void SetVersusForceStartTime(Enable) {
-    L4D2_CTimerStart(L4D2CT_VersusStartTimer, GetConVarFloat(g_cvVersusForceStartTime));
-}
-
-/**
- *
- */
 void SetVersusForceStartTime(Switcher switcher) {
     L4D2_CTimerStart(L4D2CT_VersusStartTimer, switcher == Enable ? GetConVarFloat(g_cvVersusForceStartTime) : 99999.9);
 }
@@ -1431,7 +1451,7 @@ void SetScavengeRoundSetupTimer(Switcher switcher)
     
     for (int iClient = 1; iClient <= MaxClients; iClient ++)
     {
-        if (!IsClientInGame(i) || IsFakeClient(i)) {
+        if (!IsClientInGame(iClient) || IsFakeClient(iClient)) {
             continue;
         }
 
