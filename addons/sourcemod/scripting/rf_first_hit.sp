@@ -2,7 +2,6 @@
 #pragma newdecls                required
 
 #include <sourcemod>
-#include <boss_flow>
 #include <readyup_rework>
 #include <colors>
 
