@@ -109,4 +109,10 @@
         "#format"       "{1:.1f},{2:.1f}"
         "en"            "Stop spamming ready status {1} ({red}+{2}{default}) sec"
     }
+
+    "FORCE_START_BY_ADMIN"
+    {
+        "#format"       "{1:s}"
+        "en"            "Game start is {green}forced{default} by {olive}{1}"
+    }
 }

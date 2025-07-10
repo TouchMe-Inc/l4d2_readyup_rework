@@ -16,7 +16,7 @@ public Plugin myinfo = {
     name        = "PauseRework",
     author      = "CanadaRox, TouchMe",
     description = "The plugin allows you to control the moment the round starts",
-    version     = "build_0007",
+    version     = "build_0008",
     url         = "https://github.com/TouchMe-Inc/l4d2_readyup_rework"
 };
 
@@ -49,7 +49,20 @@ public Plugin myinfo = {
 /**
  *
  */
-#define WATER_LEVEL_EYES         3
+#define WATER_LEVEL_EYES        3
+
+/**
+ * Native error messages.
+ */
+#define ERROR_INVALID_INDEX    "Invalid client index %d"
+#define ERROR_INVALID_CLIENT   "Client %d is not in game"
+#define ERROR_INDEX_OUT_BOUND  "Array index out bound"
+
+/**
+ * Silent cvar.
+ */
+#define CVAR_DISABLE           "0"
+#define CVAR_ENABLE            "1"
 
 
 enum ReadyupMode
@@ -100,6 +113,7 @@ ConVar
     g_cvVersusForceStartTime = null,
     g_cvScavengeRoundInitialTime = null,
     g_cvScavengeRoundSetupTime = null,
+    g_cvTeamSize = null,
 
     g_cvReadyupMode = null,
     g_cvDelay = null,
@@ -249,11 +263,11 @@ any Native_IsClientReady(Handle hPlugin, int iParams)
     int iClient = GetNativeCell(1);
 
     if (!IsValidClient(iClient)) {
-        return ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d", iClient);
+        return ThrowNativeError(SP_ERROR_NATIVE, ERROR_INVALID_INDEX, iClient);
     }
 
     if (!IsClientInGame(iClient)) {
-        return ThrowNativeError(SP_ERROR_NATIVE, "Client %d is not in game", iClient);
+        return ThrowNativeError(SP_ERROR_NATIVE, ERROR_INVALID_CLIENT, iClient);
     }
 
     return IsClientReady(iClient);
@@ -264,11 +278,11 @@ any Native_SetClientReady(Handle hPlugin, int iParams)
     int iClient = GetNativeCell(1);
 
     if (!IsValidClient(iClient)) {
-        return ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d", iClient);
+        return ThrowNativeError(SP_ERROR_NATIVE, ERROR_INVALID_INDEX, iClient);
     }
 
     if (!IsClientInGame(iClient)) {
-        return ThrowNativeError(SP_ERROR_NATIVE, "Client %d is not in game", iClient);
+        return ThrowNativeError(SP_ERROR_NATIVE, ERROR_INVALID_CLIENT, iClient);
     }
 
     bool bReady = GetNativeCell(2);
@@ -281,11 +295,11 @@ any Native_IsClientReadyUpVisible(Handle hPlugin, int iParams)
     int iClient = GetNativeCell(1);
 
     if (!IsValidClient(iClient)) {
-        return ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d", iClient);
+        return ThrowNativeError(SP_ERROR_NATIVE, ERROR_INVALID_INDEX, iClient);
     }
 
     if (!IsClientInGame(iClient)) {
-        return ThrowNativeError(SP_ERROR_NATIVE, "Client %d is not in game", iClient);
+        return ThrowNativeError(SP_ERROR_NATIVE, ERROR_INVALID_CLIENT, iClient);
     }
 
     return IsClientReadyUpVisible(iClient);
@@ -296,11 +310,11 @@ any Native_SetClientReadyUpVisible(Handle hPlugin, int iParams)
     int iClient = GetNativeCell(1);
 
     if (!IsValidClient(iClient)) {
-        return ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d", iClient);
+        return ThrowNativeError(SP_ERROR_NATIVE, ERROR_INVALID_INDEX, iClient);
     }
 
     if (!IsClientInGame(iClient)) {
-        return ThrowNativeError(SP_ERROR_NATIVE, "Client %d is not in game", iClient);
+        return ThrowNativeError(SP_ERROR_NATIVE, ERROR_INVALID_CLIENT, iClient);
     }
 
     bool bVisible = GetNativeCell(2);
@@ -332,7 +346,7 @@ any Native_UpdateReadyUpItem(Handle hPlugin, int iParams)
     int iItemCount = GetArraySize(hItems);
 
     if (iTargetIndex >= iItemCount) {
-        return ThrowNativeError(SP_ERROR_NATIVE, "Array index out bound");
+        return ThrowNativeError(SP_ERROR_NATIVE, ERROR_INDEX_OUT_BOUND);
     }
 
     char szBuffer[64]; FormatNativeString(0, 3, 4, sizeof(szBuffer), _, szBuffer);
@@ -353,7 +367,7 @@ any Native_RemoveReadyUpItem(Handle hPlugin, int iParams)
     int iItemCount = GetArraySize(hItems);
 
     if (iTargetIndex >= iItemCount) {
-        return ThrowNativeError(SP_ERROR_NATIVE, "Array index out bound");
+        return ThrowNativeError(SP_ERROR_NATIVE, ERROR_INDEX_OUT_BOUND);
     }
 
     for (int iIndex = iTargetIndex + 1; iIndex < iItemCount; iIndex ++)
@@ -406,6 +420,7 @@ public void OnPluginStart()
     g_cvVersusForceStartTime = FindConVar("versus_force_start_time");
     g_cvScavengeRoundInitialTime = FindConVar("scavenge_round_initial_time");
     g_cvScavengeRoundSetupTime = FindConVar("scavenge_round_setup_time");
+    g_cvTeamSize = FindConVar("survivor_limit");
 
     g_cvSoundEnable = CreateConVar("sm_readyup_sound_enable", "1", "Enable sounds played to clients", _, true, 0.0, true, 1.0);
     g_cvSoundNotify = CreateConVar("sm_readyup_sound_notify", DEFAULT_NOTIFY_SOUND, "Path to the sound that is played when the client status changes");
@@ -442,6 +457,8 @@ public void OnPluginStart()
     RegConsoleCmd("sm_r",       Cmd_Ready, "Mark yourself as ready for the round to go live");
     RegConsoleCmd("sm_unready", Cmd_Unready, "Mark yourself as not ready if you have set yourself as ready");
     RegConsoleCmd("sm_nr",      Cmd_Unready, "Mark yourself as not ready if you have set yourself as ready");
+    RegAdminCmd("sm_forcestart",Cmd_ForceStart, ADMFLAG_BAN, "Forces the round to start regardless of player ready status");
+    RegAdminCmd("sm_fs",        Cmd_ForceStart, ADMFLAG_BAN, "Forces the round to start regardless of player ready status");
     AddCommandListener(Vote_Callback, "Vote"); // Hook vote <KEY_F1> or <KEY_F2>.
 
     /*
@@ -479,9 +496,9 @@ public void OnPluginEnd()
     SetVersusForceStartTime(Enable);
     ReturnSurvivorToSaferoom();
 
-    SetConVarStringSilence(g_cvGod, "0");
-    SetConVarStringSilence(g_cvInfinitePrimaryAmmo, "0");
-    SetConVarStringSilence(g_cvPlayerStop, "0");
+    SetConVarStringSilence(g_cvGod, CVAR_DISABLE);
+    SetConVarStringSilence(g_cvInfinitePrimaryAmmo, CVAR_DISABLE);
+    SetConVarStringSilence(g_cvPlayerStop, CVAR_DISABLE);
 }
 
 /**
@@ -550,14 +567,14 @@ public Action L4D_OnFirstSurvivorLeftSafeArea(int iClient)
         SetScavengeRoundSetupTimer(Enable);
         ResetAccumulatedTime();
     }
-    else 
+    else
     {
         SetVersusForceStartTime(Enable);
     }
 
-    SetConVarStringSilence(g_cvGod, "0");
-    SetConVarStringSilence(g_cvInfinitePrimaryAmmo, "0");
-    SetConVarStringSilence(g_cvPlayerStop, "0");
+    SetConVarStringSilence(g_cvGod, CVAR_DISABLE);
+    SetConVarStringSilence(g_cvInfinitePrimaryAmmo, CVAR_DISABLE);
+    SetConVarStringSilence(g_cvPlayerStop, CVAR_DISABLE);
 
     SetReadyState(ReadyupState_None);
 
@@ -572,9 +589,9 @@ void Event_RoundStart(Event event, const char[] szName, bool bDontBroadcast)
     CreateTimer(1.0, Timer_DisableGameplayTimers, .flags = TIMER_FLAG_NO_MAPCHANGE);
 
     // ConVars.
-    SetConVarStringSilence(g_cvGod, "1");
-    SetConVarStringSilence(g_cvInfinitePrimaryAmmo, "1");
-    SetConVarStringSilence(g_cvPlayerStop, "1");
+    SetConVarStringSilence(g_cvGod, CVAR_ENABLE);
+    SetConVarStringSilence(g_cvInfinitePrimaryAmmo, CVAR_ENABLE);
+    SetConVarStringSilence(g_cvPlayerStop, CVAR_ENABLE);
 
     // Reset client ready status.
     for (int iClient = 1; iClient <= MaxClients; iClient ++)
@@ -585,7 +602,7 @@ void Event_RoundStart(Event event, const char[] szName, bool bDontBroadcast)
 
     if (!InSecondHalfOfRound())
     {
-        g_iPlayerLoading = GetPlayerLoading();
+        g_iPlayerLoading = GetLoadingPlayers();
         CreateTimer(1.0, Timer_HasPlayerLoading, .flags = TIMER_FLAG_NO_MAPCHANGE | TIMER_REPEAT);
     }
 
@@ -612,7 +629,7 @@ void Event_RoundStart(Event event, const char[] szName, bool bDontBroadcast)
  */
 Action Timer_HasPlayerLoading(Handle timer)
 {
-    g_iPlayerLoading = GetPlayerLoading();
+    g_iPlayerLoading = GetLoadingPlayers();
 
     if (g_iPlayerLoading > 0) {
         return Plugin_Continue;
@@ -672,7 +689,7 @@ Action Timer_AutoStart(Handle timer)
         return Plugin_Continue;
     }
 
-    if (g_iPlayerLoading > 0) {
+    if (NeedWaitLoadingPlayers(g_iPlayerLoading)) {
         return Plugin_Continue;
     }
 
@@ -707,7 +724,7 @@ void Event_GameInstructorDraw(Event event, const char[] szName, bool bDontBroadc
         SetScavengeRoundSetupTimer(Disable);
         ResetAccumulatedTime();
     }
-    else 
+    else
     {
         SetVersusForceStartTime(Disable);
     }
@@ -862,11 +879,11 @@ Action Cmd_ReturnToSaferoom(int iClient, int iArgs)
  */
 Action Cmd_Ready(int iClient, int iArgs)
 {
-    if (!IsReadyStateInProgress() || !IsModeNeedClientAction()) {
+    if (!IsModeNeedClientAction() || !IsReadyStateInProgress()) {
         return Plugin_Continue;
     }
 
-    if (g_iPlayerLoading > 0) {
+    if (NeedWaitLoadingPlayers(g_iPlayerLoading)) {
         return Plugin_Continue;
     }
 
@@ -923,11 +940,11 @@ Action Cmd_Ready(int iClient, int iArgs)
  */
 Action Cmd_Unready(int iClient, int iArgs)
 {
-    if (!IsReadyStateInProgress() || !IsModeNeedClientAction()) {
+    if (!IsModeNeedClientAction() || !IsReadyStateInProgress()) {
         return Plugin_Continue;
     }
 
-    if (g_iPlayerLoading > 0) {
+    if (NeedWaitLoadingPlayers(g_iPlayerLoading)) {
         return Plugin_Continue;
     }
 
@@ -973,6 +990,7 @@ Action Cmd_Unready(int iClient, int iArgs)
         SetReadyState(ReadyupState_UnReady);
 
         char szPlayerName[MAX_NAME_LENGTH];
+        GetClientNameFixed(iClient, szPlayerName, sizeof(szPlayerName), 18);
 
         for (int iPlayer = 1; iPlayer <= MaxClients; iPlayer ++)
         {
@@ -982,10 +1000,39 @@ Action Cmd_Unready(int iClient, int iArgs)
                 continue;
             }
 
-            GetClientNameFixed(iClient, szPlayerName, sizeof(szPlayerName), 18);
-
             CPrintToChat(iPlayer, "%T%T", "TAG", iPlayer, "STOP_COUNTDOWN_PLAYER_UNREADY", iPlayer, szPlayerName);
         }
+    }
+
+    return Plugin_Handled;
+}
+
+/**
+ *
+ */
+Action Cmd_ForceStart(int iClient, int args)
+{
+    if (!IsModeNeedClientAction() || !IsReadyState(ReadyupState_UnReady)) {
+        return Plugin_Continue;
+    }
+
+    SetReadyState(ReadyupState_Countdown);
+
+    g_iCountdownTimer = g_iStartDelay;
+    CreateTimer(1.0, Timer_Countdown, .flags = TIMER_FLAG_NO_MAPCHANGE | TIMER_REPEAT);
+
+    char szPlayerName[MAX_NAME_LENGTH];
+    GetClientNameFixed(iClient, szPlayerName, sizeof(szPlayerName), 18);
+
+    for (int iPlayer = 1; iPlayer <= MaxClients; iPlayer ++)
+    {
+        if (!IsClientInGame(iPlayer)
+        || IsFakeClient(iPlayer)
+        || !IsValidTeam(GetClientTeam(iPlayer))) {
+            continue;
+        }
+
+        CPrintToChat(iPlayer, "%T%T", "TAG", iPlayer, "FORCE_START_BY_ADMIN", iPlayer, szPlayerName);
     }
 
     return Plugin_Handled;
@@ -1134,7 +1181,7 @@ int DummyHandler(Handle menu, MenuAction action, int param1, int param2) { retur
 
 void DrawPanelBodyForAutoStart(Handle hPanel, int iClient)
 {
-    if (g_iPlayerLoading > 0) {
+    if (NeedWaitLoadingPlayers(g_iPlayerLoading)) {
         DrawPanelFormatText(hPanel, "%T", "PANEL_CONNECTING_DELAY", iClient, g_iPlayerLoading);
     } else {
         DrawPanelFormatText(hPanel, "%T", "PANEL_AUTOSTART_TIMER", iClient, g_iAutoStartTimer + 1);
@@ -1143,7 +1190,7 @@ void DrawPanelBodyForAutoStart(Handle hPanel, int iClient)
 
 void DrawPanelBodyForPlayerReady(Handle hPanel, int iClient)
 {
-    if (g_iPlayerLoading > 0)
+    if (NeedWaitLoadingPlayers(g_iPlayerLoading))
     {
         DrawPanelFormatText(hPanel, "%T", "PANEL_CONNECTING_DELAY", iClient, g_iPlayerLoading);
         return;
@@ -1194,7 +1241,7 @@ void DrawPanelBodyForPlayerReady(Handle hPanel, int iClient)
 
 void DrawPanelBodyForTeamReady(Handle hPanel, int iClient)
 {
-    if (g_iPlayerLoading > 0)
+    if (NeedWaitLoadingPlayers(g_iPlayerLoading))
     {
         DrawPanelFormatText(hPanel, "%T", "PANEL_CONNECTING_DELAY", iClient, g_iPlayerLoading);
         return;
@@ -1442,13 +1489,13 @@ void SetVersusForceStartTime(Switcher switcher) {
 void SetScavengeRoundSetupTimer(Switcher switcher)
 {
     CountdownTimer cTimer = L4D2Direct_GetScavengeRoundSetupTimer();
-    
+
     if (cTimer == CTimer_Null) {
         return;
     }
 
     CTimer_Start(cTimer, switcher == Enable ? GetConVarFloat(g_cvScavengeRoundSetupTime) : 99999.9);
-    
+
     for (int iClient = 1; iClient <= MaxClients; iClient ++)
     {
         if (!IsClientInGame(iClient) || IsFakeClient(iClient)) {
@@ -1704,7 +1751,7 @@ void ReturnClientToSaferoom(int iClient)
  *
  * @return          Player count.
  */
-int GetPlayerLoading()
+int GetLoadingPlayers()
 {
     int iPlayers = 0;
 
@@ -1716,6 +1763,30 @@ int GetPlayerLoading()
     }
 
     return iPlayers;
+}
+
+/**
+ * Determines whether the game server should wait for additional loading players
+ * before proceeding with gameplay.
+ *
+ * @param iLoadingPlayers   The number of players currently in the process of loading.
+ * @return                  True if waiting is necessary (i.e., loading players exist
+ *                          and the current in-game team size is below the configured threshold),
+ *                          false otherwise.
+ */
+bool NeedWaitLoadingPlayers(int iLoadingPlayers)
+{
+    int iTeamSize = g_cvTeamSize.IntValue;
+
+    int iPlayers = 0;
+    for (int iClient = 1; iClient <= MaxClients; iClient ++)
+    {
+        if (IsClientInGame(iClient) && IsValidTeam(GetClientTeam(iClient))) {
+            iPlayers ++;
+        }
+    }
+
+    return (iLoadingPlayers > 0) && (iPlayers < iTeamSize);
 }
 
 /**

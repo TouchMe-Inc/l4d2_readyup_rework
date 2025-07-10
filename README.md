@@ -6,6 +6,7 @@ The plugin allows you to control the moment the round starts.
 * `!unready` or `!nr` - Mark your status as Not Ready.
 * `!readyup` - Show/Hide Ready Panel.
 * `!return` - Return to spawn point.
+* `!fs` or `!forcestart`.
 
 ## ConVars
 | ConVar               | Value         | Description                                                                                     |
