@@ -8,11 +8,11 @@
 
 public Plugin myinfo =
 {
-	name = "ReadyupFooterFirstHit",
-	author = "TouchMe",
-	description = "N/a",
-	version = "build0000",
-	url = "https://github.com/TouchMe-Inc/l4d2_readyup_rework"
+    name = "ReadyupFooterFirstHit",
+    author = "TouchMe",
+    description = "N/a",
+    version = "build0000",
+    url = "https://github.com/TouchMe-Inc/l4d2_readyup_rework"
 }
 
 
@@ -37,15 +37,15 @@ public Plugin myinfo =
 
 char g_sClass[][] =
 {
-	"",
-	"Smoker",
-	"(Boomer)",
-	"Hunter",
-	"(Spitter)",
-	"Jockey",
-	"Charger",
-	"",
-	""
+    "",
+    "Smoker",
+    "(Boomer)",
+    "Hunter",
+    "(Spitter)",
+    "Jockey",
+    "Charger",
+    "",
+    ""
 };
 
 int g_iThisIndex = -1;
@@ -57,11 +57,11 @@ bool g_bReadyUpAvailable = false;
   */
 public void OnAllPluginsLoaded()
 {
-	g_bReadyUpAvailable = LibraryExists(LIB_READY);
+    g_bReadyUpAvailable = LibraryExists(LIB_READY);
 
-	if (g_bReadyUpAvailable) {
-		g_iThisIndex = PushReadyUpItem(PanelPos_Footer, "OnPrepareReadyUpItem");
-	}
+    if (g_bReadyUpAvailable) {
+        g_iThisIndex = PushReadyUpItem(PanelPos_Footer, "OnPrepareReadyUpItem");
+    }
 }
 
 /**
@@ -71,9 +71,9 @@ public void OnAllPluginsLoaded()
   */
 public void OnLibraryRemoved(const char[] sName)
 {
-	if (StrEqual(sName, LIB_READY)) {
-		g_bReadyUpAvailable = false;
-	}
+    if (StrEqual(sName, LIB_READY)) {
+        g_bReadyUpAvailable = false;
+    }
 }
 
 /**
@@ -83,84 +83,63 @@ public void OnLibraryRemoved(const char[] sName)
   */
 public void OnLibraryAdded(const char[] sName)
 {
-	if (StrEqual(sName, LIB_READY)) {
-		g_bReadyUpAvailable = true;
-	}
-}
-
-/**
- * Called before OnPluginStart.
- *
- * @param myself            Handle to the plugin.
- * @param late              Whether or not the plugin was loaded "late" (after map load).
- * @param error             Error message buffer in case load failed.
- * @param err_max           Maximum number of characters for error message buffer.
- * @return                  APLRes_Success | APLRes_SilentFailure.
- */
-public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
-{
-	if (GetEngineVersion() != Engine_Left4Dead2)
-	{
-		strcopy(error, err_max, "Plugin only supports Left 4 Dead 2.");
-		return APLRes_SilentFailure;
-	}
-
-	return APLRes_Success;
+    if (StrEqual(sName, LIB_READY)) {
+        g_bReadyUpAvailable = true;
+    }
 }
 
 public void OnPluginStart()
 {
-	// Load translations.
-	LoadTranslations(TRANSLATIONS);
+    LoadTranslations(TRANSLATIONS);
 }
 
 public Action OnPrepareReadyUpItem(PanelPos ePos, int iClient, int iIndex)
 {
-	if (!g_bReadyUpAvailable || ePos != PanelPos_Footer || g_iThisIndex != iIndex) {
-		return Plugin_Continue;
-	}
+    if (!g_bReadyUpAvailable || ePos != PanelPos_Footer || g_iThisIndex != iIndex) {
+        return Plugin_Continue;
+    }
 
-	Handle hSpawnOrder = CreateArray();
-	
-	for (int iPlayer = 1; iPlayer <= MaxClients; iPlayer ++)
-	{
-		if (!IsClientInGame(iPlayer) || !IsClientInfected(iPlayer) || !IsPlayerAlive(iPlayer)) {
-			continue;
-		}
-		
-		int iZombieClass = GetClientClass(iPlayer);
+    Handle hSpawnOrder = CreateArray();
 
-		if (IsValidClass(iZombieClass)) {
-			PushArrayCell(hSpawnOrder, iZombieClass);
-		}
-	}
+    for (int iPlayer = 1; iPlayer <= MaxClients; iPlayer ++)
+    {
+        if (!IsClientInGame(iPlayer) || !IsClientInfected(iPlayer) || !IsPlayerAlive(iPlayer)) {
+            continue;
+        }
 
-	int iArraySize = GetArraySize(hSpawnOrder);
-	
-	if (!iArraySize) {
-		return Plugin_Continue;
-	}
+        int iZombieClass = GetClientClass(iPlayer);
 
-	char sBuffer[64];
+        if (IsValidClass(iZombieClass)) {
+            PushArrayCell(hSpawnOrder, iZombieClass);
+        }
+    }
 
-	for (int iItem = 0; iItem < iArraySize; iItem ++)
-	{
-		int iZombieClass = GetArrayCell(hSpawnOrder, iItem);
-		Format(sBuffer, sizeof(sBuffer), "%s%s%s", sBuffer, g_sClass[iZombieClass], iItem != (iArraySize - 1) ? ", " : "");
-	}
+    int iArraySize = GetArraySize(hSpawnOrder);
 
-	CloseHandle(hSpawnOrder);
+    if (!iArraySize) {
+        return Plugin_Continue;
+    }
 
-	UpdateReadyUpItem(ePos, iIndex, "SI: %s", sBuffer);
+    char sBuffer[64];
 
-	return Plugin_Stop;
+    for (int iItem = 0; iItem < iArraySize; iItem ++)
+    {
+        int iZombieClass = GetArrayCell(hSpawnOrder, iItem);
+        Format(sBuffer, sizeof(sBuffer), "%s%s%s", sBuffer, g_sClass[iZombieClass], iItem != (iArraySize - 1) ? ", " : "");
+    }
+
+    CloseHandle(hSpawnOrder);
+
+    UpdateReadyUpItem(ePos, iIndex, "SI: %s", sBuffer);
+
+    return Plugin_Stop;
 }
 
 /**
  * Get the zombie player class.
  */
 int GetClientClass(int iClient) {
-	return GetEntProp(iClient, Prop_Send, "m_zombieClass");
+    return GetEntProp(iClient, Prop_Send, "m_zombieClass");
 }
 
 
@@ -168,12 +147,12 @@ int GetClientClass(int iClient) {
  * The class is included in the pool of infected.
  */
 bool IsValidClass(int iClass) {
-	return (iClass >= SI_CLASS_SMOKER && iClass <= SI_CLASS_CHARGER);
+    return (iClass >= SI_CLASS_SMOKER && iClass <= SI_CLASS_CHARGER);
 }
 
 /**
  * Returns whether the player is infected.
  */
 bool IsClientInfected(int iClient) {
-	return (GetClientTeam(iClient) == TEAM_INFECTED);
+    return (GetClientTeam(iClient) == TEAM_INFECTED);
 }

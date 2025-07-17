@@ -95,7 +95,7 @@
 
     "PANEL_ALREADY_READY"
     {
-        "en"            "The round will start when\nthe survivors leave the safe room"
+        "en"            "The round will start when\nthe survivors leave the safe zone"
     }
 
     "STOP_SPAM_COMMAND"
