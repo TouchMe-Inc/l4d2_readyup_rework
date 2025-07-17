@@ -16,7 +16,7 @@ public Plugin myinfo = {
     name        = "PauseRework",
     author      = "CanadaRox, TouchMe",
     description = "The plugin allows you to control the moment the round starts",
-    version     = "build_0008",
+    version     = "build_0009",
     url         = "https://github.com/TouchMe-Inc/l4d2_readyup_rework"
 };
 
@@ -63,6 +63,8 @@ public Plugin myinfo = {
  */
 #define CVAR_DISABLE           "0"
 #define CVAR_ENABLE            "1"
+
+#define MAXSIZE_SHORT_NAME     18
 
 
 enum ReadyupMode
@@ -504,8 +506,26 @@ public void OnPluginEnd()
 /**
  *
  */
-void OnModeChanged(ConVar cv, const char[] szOldValue, const char[] szNewValue) {
-    g_eReadyupMode = view_as<ReadyupMode>(GetConVarInt(cv));
+void OnModeChanged(ConVar cv, const char[] szOldValue, const char[] szNewValue)
+{
+    ReadyupMode eOldReadyupMode = g_eReadyupMode;
+    ReadyupMode eNewReadyupMode = view_as<ReadyupMode>(GetConVarInt(g_cvReadyupMode));
+
+    if (eOldReadyupMode == eNewReadyupMode) {
+        return;
+    }
+
+    g_eReadyupState = ReadyupState_None;
+    g_eReadyupMode = eNewReadyupMode;
+
+    CreateTimer(1.0, Timer_OnModeChanged, .flags = TIMER_FLAG_NO_MAPCHANGE);
+   
+}
+
+Action Timer_OnModeChanged(Handle hTimer)
+{
+    InitReadyup();
+    return Plugin_Stop;
 }
 
 /**
@@ -584,7 +604,11 @@ public Action L4D_OnFirstSurvivorLeftSafeArea(int iClient)
 /**
  *
  */
-void Event_RoundStart(Event event, const char[] szName, bool bDontBroadcast)
+void Event_RoundStart(Event event, const char[] szName, bool bDontBroadcast) {
+    InitReadyup();
+}
+
+void InitReadyup()
 {
     CreateTimer(1.0, Timer_DisableGameplayTimers, .flags = TIMER_FLAG_NO_MAPCHANGE);
 
@@ -754,7 +778,7 @@ Action Event_PlayerTeam(Event event, const char[] szName, bool bDontBroadcast)
     int iOldTeam = GetEventInt(event, "oldteam");
 
     char szPlayerName[MAX_NAME_LENGTH];
-    GetClientNameFixed(iClient, szPlayerName, sizeof(szPlayerName), 18);
+    GetClientNameFixed(iClient, szPlayerName, sizeof(szPlayerName), MAXSIZE_SHORT_NAME);
 
     DataPack hPack = CreateDataPack();
     WritePackCell(hPack, iClient);
@@ -786,9 +810,16 @@ Action Timer_PlayerTeam(Handle hTimer, DataPack hPack)
 
     if (IsValidTeam(iOldTeam) || IsValidTeam(iNewTeam))
     {
-        if (IsReadyupMode(ReadyupMode_PlayerReady)) {
-            SetTeamReady(iNewTeam == TEAM_NONE ? iOldTeam : iNewTeam, false);
-        } else {
+        if (IsReadyupMode(ReadyupMode_PlayerReady))
+        {
+            SetTeamReady(iOldTeam, false);
+
+            if (iNewTeam != TEAM_NONE) {
+                SetTeamReady(iNewTeam, false);
+            }
+        }
+        else
+        {
             SetClientReady(iClient, false);
         }
 
@@ -990,7 +1021,7 @@ Action Cmd_Unready(int iClient, int iArgs)
         SetReadyState(ReadyupState_UnReady);
 
         char szPlayerName[MAX_NAME_LENGTH];
-        GetClientNameFixed(iClient, szPlayerName, sizeof(szPlayerName), 18);
+        GetClientNameFixed(iClient, szPlayerName, sizeof(szPlayerName), MAXSIZE_SHORT_NAME);
 
         for (int iPlayer = 1; iPlayer <= MaxClients; iPlayer ++)
         {
@@ -1022,7 +1053,7 @@ Action Cmd_ForceStart(int iClient, int args)
     CreateTimer(1.0, Timer_Countdown, .flags = TIMER_FLAG_NO_MAPCHANGE | TIMER_REPEAT);
 
     char szPlayerName[MAX_NAME_LENGTH];
-    GetClientNameFixed(iClient, szPlayerName, sizeof(szPlayerName), 18);
+    GetClientNameFixed(iClient, szPlayerName, sizeof(szPlayerName), MAXSIZE_SHORT_NAME);
 
     for (int iPlayer = 1; iPlayer <= MaxClients; iPlayer ++)
     {
@@ -1288,7 +1319,7 @@ void DrawPanelBodyForTeamReady(Handle hPanel, int iClient)
 
         for (int iPlayer = 0; iPlayer < iTotalPlayers[iTeam]; iPlayer ++)
         {
-            GetClientNameFixed(iPlayers[iTeam][iPlayer], szPlayerName, sizeof(szPlayerName), 18);
+            GetClientNameFixed(iPlayers[iTeam][iPlayer], szPlayerName, sizeof(szPlayerName), MAXSIZE_SHORT_NAME);
 
             DrawPanelFormatText(hPanel, "%T", "PANEL_BLOCK_ITEM", iClient,
                 IsClientReady(iPlayers[iTeam][iPlayer]) ? sPanelMarkReady : sPanelMarkUnready,
@@ -1327,7 +1358,7 @@ void DrawPanelBodyForTeamReady(Handle hPanel, int iClient)
 
             for (int iPlayer = 0; iPlayer < iTotalCasters; iPlayer ++)
             {
-                GetClientNameFixed(iCaster[iPlayer], szPlayerName, sizeof(szPlayerName), 18);
+                GetClientNameFixed(iCaster[iPlayer], szPlayerName, sizeof(szPlayerName), MAXSIZE_SHORT_NAME);
 
                 DrawPanelFormatText(hPanel, "%T", "PANEL_BLOCK_ITEM", iClient,
                     sPanelMarkReady,
