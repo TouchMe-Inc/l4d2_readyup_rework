@@ -13,7 +13,7 @@
 
 
 public Plugin myinfo = {
-    name        = "PauseRework",
+    name        = "ReadyupRework",
     author      = "CanadaRox, TouchMe",
     description = "The plugin allows you to control the moment the round starts",
     version     = "build_0009",
