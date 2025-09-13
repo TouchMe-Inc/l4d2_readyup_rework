@@ -4,14 +4,14 @@
 #include <sourcemod>
 #include <boss_flow>
 #include <readyup_rework>
+#include <left4dhooks>
 #include <colors>
 
 
-public Plugin myinfo =
-{
-    name        = "ReadyupFooterBossFlow",
+public Plugin myinfo = {
+    name        = "[ReadyupFooter] TankFlow",
     author      = "TouchMe",
-    description = "Adds boss percentages to the bottom of ReadyUp",
+    description = "Adds tank percentages to the bottom of ReadyUp",
     version     = "build0001",
     url         = "https://github.com/TouchMe-Inc/l4d2_readyup_rework"
 }
@@ -19,12 +19,15 @@ public Plugin myinfo =
 
 #define LIB_READY               "readyup_rework"
 
+#define TRANSLATIONS            "rf_tank_flow.phrases"
 
-#define TRANSLATIONS            "rf_boss_flow.phrases"
 
 int g_iThisIndex = -1;
 
 bool g_bReadyUpAvailable = false;
+
+ConVar g_cvVsBossBuffer = null;
+
 
 /**
   * Global event. Called when all plugins loaded.
@@ -65,6 +68,8 @@ public void OnLibraryAdded(const char[] sName)
 public void OnPluginStart()
 {
     LoadTranslations(TRANSLATIONS);
+
+    g_cvVsBossBuffer = FindConVar("versus_boss_buffer");
 }
 
 public Action OnPrepareReadyUpItem(PanelPos ePos, int iClient, int iIndex)
@@ -73,48 +78,36 @@ public Action OnPrepareReadyUpItem(PanelPos ePos, int iClient, int iIndex)
         return Plugin_Continue;
     }
 
-    char szTankPercent[32], szWitchPercent[32];
+    char szTankPercent[32];
 
     if (IsBossSpawnAllowed(Boss_Tank))
     {
-        int iTankPercent = GetBossFlow(Boss_Tank);
+        int iTankFlow = GetBossFlow(Boss_Tank);
 
         if (IsMapWithStaticBossSpawn(Boss_Tank)) {
-            FormatEx(szTankPercent, sizeof(szTankPercent), "%T", "STATIC", iClient);
+            FormatEx(szTankPercent, sizeof szTankPercent, "%T", "STATIC", iClient);
         }
 
-        else if (iTankPercent == 0) {
-            FormatEx(szTankPercent, sizeof(szTankPercent), "%T", "DISABLE", iClient);
+        else if (iTankFlow == 0) {
+            FormatEx(szTankPercent, sizeof szTankPercent, "%T", "DISABLE", iClient);
         }
 
-        else {
-            FormatEx(szTankPercent, sizeof(szTankPercent), "%T", "PERCENT", iClient, iTankPercent);
-        }
-    }
+        else
+        {
+            float fBossBuffer = GetConVarFloat(g_cvVsBossBuffer) / L4D2Direct_GetMapMaxFlowDistance();
 
-    if (IsBossSpawnAllowed(Boss_Witch))
-    {
-        int iWitchPercent = GetBossFlow(Boss_Witch);
+            int iTankFlowTrigger = iTankFlow - RoundToNearest(fBossBuffer * 100.0);
 
-        if (IsMapWithStaticBossSpawn(Boss_Witch)) {
-            FormatEx(szWitchPercent, sizeof(szWitchPercent), "%T", "STATIC", iClient);
-        }
+            if (iTankFlowTrigger < 0) {
+                iTankFlowTrigger = 1;
+            }
 
-        else if (iWitchPercent == 0) {
-            FormatEx(szWitchPercent, sizeof(szWitchPercent), "%T", "DISABLE", iClient);
-        }
-
-        else {
-            FormatEx(szWitchPercent, sizeof(szWitchPercent), "%T", "PERCENT", iClient, iWitchPercent);
+            FormatEx(szTankPercent, sizeof szTankPercent, "%T", "PERCENT", iClient, iTankFlow, iTankFlowTrigger);
         }
     }
 
-    if (szTankPercent[0] != '\0' && szWitchPercent[0] != '\0') {
-        UpdateReadyUpItem(ePos, iIndex, "%T %T", "TANK_FLOW", iClient, szTankPercent, "WITCH_FLOW", iClient, szWitchPercent);
-    } else if (szTankPercent[0] != '\0' ) {
+    if (szTankPercent[0] != '\0' ) {
         UpdateReadyUpItem(ePos, iIndex, "%T", "TANK_FLOW", iClient, szTankPercent);
-    } else if (szWitchPercent[0] != '\0') {
-        UpdateReadyUpItem(ePos, iIndex, "%T", "WITCH_FLOW", iClient, szWitchPercent);
     }
 
     return Plugin_Stop;

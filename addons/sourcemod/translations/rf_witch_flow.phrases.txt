@@ -1,0 +1,24 @@
+"Phrases"
+{
+    "STATIC"
+    {
+        "en"			"Static"
+    }
+
+    "DISABLE"
+    {
+        "en"			"None"
+    }
+
+    "PERCENT"
+    {
+        "#format"		"{1:d}"
+        "en"			"{1}%%"
+    }
+
+    "WITCH_FLOW"
+    {
+        "#format"		"{1:s}"
+        "en"			"Witch: {1}"
+    }
+}

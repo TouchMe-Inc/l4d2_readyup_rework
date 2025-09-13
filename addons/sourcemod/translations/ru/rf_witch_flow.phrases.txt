@@ -1,0 +1,24 @@
+"Phrases"
+{
+    "STATIC"
+    {
+        "ru"			"Статична"
+    }
+
+    "DISABLE"
+    {
+        "ru"			"Нет"
+    }
+
+    "PERCENT"
+    {
+        "#format"		"{1:d}"
+        "ru"			"{1}%%"
+    }
+
+    "WITCH_FLOW"
+    {
+        "#format"		"{1:s}"
+        "ru"			"Ведьма: {1}"
+    }
+}
