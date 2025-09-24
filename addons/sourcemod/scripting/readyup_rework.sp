@@ -118,6 +118,7 @@ ConVar
     g_cvTeamSize = null,
 
     g_cvReadyupMode = null,
+    g_cvReadyupEffect = null,
     g_cvDelay = null,
     g_cvAutoStartDelay = null,
     g_cvAfkDuration = null,
@@ -152,8 +153,8 @@ float g_fAfkDuration = 0.0;
 float g_fLastClientActivityTime[MAXPLAYERS + 1] = {0.0, ...};
 
 bool
-    g_bClientReady[MAXPLAYERS + 1],
-    g_bClientReadyUpVisible[MAXPLAYERS + 1]
+    g_bClientReady[MAXPLAYERS + 1] = {false, ...},
+    g_bClientReadyUpVisible[MAXPLAYERS + 1] = {false, ...}
 ;
 
 float g_fSpamCooldownInitial = 0.0;
@@ -430,6 +431,7 @@ public void OnPluginStart()
     g_cvSoundLive = CreateConVar("sm_readyup_sound_live", DEFAULT_LIVE_SOUND, "The sound that plays when a round goes live");
 
     g_cvReadyupMode = CreateConVar("sm_readyup_mode", "2", "Plugin operating mode (Values: 0 = Disabled, 1 = Auto start, 2 = Player ready, 3 = Team ready)", _, true, 0.0, true, 3.0);
+    g_cvReadyupEffect = CreateConVar("sm_readyup_effect", "3", "Values: 0 = Disabled, 1 = ?, 2 = ?, 3 = ?", _, true, 0.0, true, 3.0);
     g_cvDelay = CreateConVar("sm_readyup_delay", "3", "Number of seconds to count down before the round goes live", _, true, 0.0);
     g_cvAutoStartDelay = CreateConVar("sm_readyup_autostart_delay", "20.0", "Number of seconds before forced automatic start (only sm_readyup_mode 1)", _, true, 0.0);
     g_cvAfkDuration = CreateConVar("sm_readyup_afk_duration", "15.0", "Number of seconds since the player's last activity to count his afk", _, true, 1.0);
@@ -495,16 +497,16 @@ public void OnPluginStart()
  */
 public void OnPluginEnd()
 {
+    SetConVarStringSilence(g_cvGod, CVAR_DISABLE);
+    SetConVarStringSilence(g_cvInfinitePrimaryAmmo, CVAR_DISABLE);
+    SetConVarStringSilence(g_cvPlayerStop, CVAR_DISABLE);
+
     if (g_eReadyupState == ReadyupState_None) {
         return;
     }
 
     SetVersusForceStartTime(Enable);
     ReturnSurvivorToSaferoom();
-
-    SetConVarStringSilence(g_cvGod, CVAR_DISABLE);
-    SetConVarStringSilence(g_cvInfinitePrimaryAmmo, CVAR_DISABLE);
-    SetConVarStringSilence(g_cvPlayerStop, CVAR_DISABLE);
 }
 
 /**
@@ -516,6 +518,12 @@ void OnModeChanged(ConVar cv, const char[] szOldValue, const char[] szNewValue)
     ReadyupMode eNewReadyupMode = view_as<ReadyupMode>(GetConVarInt(g_cvReadyupMode));
 
     if (eOldReadyupMode == eNewReadyupMode) {
+        return;
+    }
+
+    if (g_eReadyupState == ReadyupState_None)
+    {
+        g_eReadyupMode = eNewReadyupMode;
         return;
     }
 
@@ -627,6 +635,9 @@ void InitReadyup()
         g_bClientReadyUpVisible[iClient] = true;
     }
 
+    // Show panel.
+    CreateTimer(1.0, Timer_UpdatePanel, .flags = TIMER_FLAG_NO_MAPCHANGE | TIMER_REPEAT);
+
     if (!InSecondHalfOfRound())
     {
         g_iPlayerLoading = GetLoadingPlayers();
@@ -646,15 +657,12 @@ void InitReadyup()
 
         default: SetReadyState(ReadyupState_UnReady);
     }
-
-    // Show panel.
-    CreateTimer(1.0, Timer_UpdatePanel, .flags = TIMER_FLAG_NO_MAPCHANGE | TIMER_REPEAT);
 }
 
 /**
  *
  */
-Action Timer_HasPlayerLoading(Handle timer)
+Action Timer_HasPlayerLoading(Handle hTimer)
 {
     g_iPlayerLoading = GetLoadingPlayers();
 
@@ -668,7 +676,7 @@ Action Timer_HasPlayerLoading(Handle timer)
 /**
  *
  */
-Action Timer_UpdatePanel(Handle timer)
+Action Timer_UpdatePanel(Handle hTimer)
 {
     if (IsReadyState(ReadyupState_None)) {
         return Plugin_Stop;
@@ -703,7 +711,7 @@ Action Timer_UpdatePanel(Handle timer)
 /**
  *
  */
-Action Timer_AutoStart(Handle timer)
+Action Timer_AutoStart(Handle hTimer)
 {
     if (!IsReadyState(ReadyupState_Countdown)) {
         return Plugin_Stop;
@@ -744,7 +752,7 @@ void Event_GameInstructorDraw(Event event, const char[] szName, bool bDontBroadc
 /**
  *
  */
- Action Timer_DisableGameplayTimers(Handle timer)
+ Action Timer_DisableGameplayTimers(Handle hTimer)
  {
     if (L4D2_IsScavengeMode())
     {
@@ -849,7 +857,7 @@ Action Timer_PlayerTeam(Handle hTimer, DataPack hPack)
 /**
  *
  */
-Action Timer_Countdown(Handle timer)
+Action Timer_Countdown(Handle hTimer)
 {
     if (!IsReadyState(ReadyupState_Countdown)) {
         return Plugin_Stop;
@@ -1218,7 +1226,7 @@ void DrawPanelBodyForAutoStart(Handle hPanel, int iClient)
     if (NeedWaitLoadingPlayers(g_iPlayerLoading)) {
         DrawPanelFormatText(hPanel, "%T", "PANEL_CONNECTING_DELAY", iClient, g_iPlayerLoading);
     } else {
-        DrawPanelFormatText(hPanel, "%T", "PANEL_AUTOSTART_TIMER", iClient, g_iAutoStartTimer + 1);
+        DrawPanelFormatText(hPanel, "%T", "PANEL_AUTOSTART_TIMER", iClient, g_iAutoStartTimer);
     }
 }
 
@@ -1236,9 +1244,9 @@ void DrawPanelBodyForPlayerReady(Handle hPanel, int iClient)
         return;
     }
 
-    char sPanelMarkReady[16]; FormatEx(sPanelMarkReady, sizeof(sPanelMarkReady), "%T", "PANEL_MARK_READY", iClient);
-    char sPanelMarkUnready[16]; FormatEx(sPanelMarkUnready, sizeof(sPanelMarkUnready), "%T", "PANEL_MARK_UNREADY", iClient);
-    char sPanelMarkAfk[16]; FormatEx(sPanelMarkAfk, sizeof(sPanelMarkAfk), "%T", "PANEL_MARK_AFK", iClient);
+    char szPanelMarkReady[8]; FormatEx(szPanelMarkReady, sizeof(szPanelMarkReady), "%T", "PANEL_MARK_READY", iClient);
+    char szPanelMarkUnready[8]; FormatEx(szPanelMarkUnready, sizeof(szPanelMarkUnready), "%T", "PANEL_MARK_UNREADY", iClient);
+    char szPanelMarkAfk[16]; FormatEx(szPanelMarkAfk, sizeof(szPanelMarkAfk), "%T", "PANEL_MARK_AFK", iClient);
     char sSurvivorTeam[64]; FormatEx(sSurvivorTeam, sizeof(sSurvivorTeam), "%T", "PANEL_SURVIVOR_TEAM", iClient);
     char sInfectedTeam[64]; FormatEx(sInfectedTeam, sizeof(sInfectedTeam), "%T", "PANEL_INFECTED_TEAM", iClient);
 
@@ -1261,14 +1269,14 @@ void DrawPanelBodyForPlayerReady(Handle hPanel, int iClient)
     }
 
     DrawPanelFormatText(hPanel, "%T", "PANEL_BLOCK_ITEM", iClient,
-        IsTeamReady(TEAM_SURVIVOR) ? sPanelMarkReady : sPanelMarkUnready,
-        bSurvivorAfk ? sPanelMarkAfk : "",
+        IsTeamReady(TEAM_SURVIVOR) ? szPanelMarkReady : szPanelMarkUnready,
+        bSurvivorAfk ? szPanelMarkAfk : "",
         sSurvivorTeam
     );
 
     DrawPanelFormatText(hPanel, "%T", "PANEL_BLOCK_ITEM", iClient,
-        IsTeamReady(TEAM_INFECTED) ? sPanelMarkReady : sPanelMarkUnready,
-        bInfectedAfk ? sPanelMarkAfk : "",
+        IsTeamReady(TEAM_INFECTED) ? szPanelMarkReady : szPanelMarkUnready,
+        bInfectedAfk ? szPanelMarkAfk : "",
         sInfectedTeam
     );
 }
@@ -1291,9 +1299,9 @@ void DrawPanelBodyForTeamReady(Handle hPanel, int iClient)
         "PANEL_SURVIVOR_TEAM", "PANEL_INFECTED_TEAM", "PANEL_CASTER_TEAM"
     };
 
-    char sPanelMarkReady[16]; FormatEx(sPanelMarkReady, sizeof(sPanelMarkReady), "%T", "PANEL_MARK_READY", iClient);
-    char sPanelMarkUnready[16]; FormatEx(sPanelMarkUnready, sizeof(sPanelMarkUnready), "%T", "PANEL_MARK_UNREADY", iClient);
-    char sPanelMarkAfk[16]; FormatEx(sPanelMarkAfk, sizeof(sPanelMarkAfk), "%T", "PANEL_MARK_AFK", iClient);
+    char szPanelMarkReady[8]; FormatEx(szPanelMarkReady, sizeof(szPanelMarkReady), "%T", "PANEL_MARK_READY", iClient);
+    char szPanelMarkUnready[8]; FormatEx(szPanelMarkUnready, sizeof(szPanelMarkUnready), "%T", "PANEL_MARK_UNREADY", iClient);
+    char szPanelMarkAfk[16]; FormatEx(szPanelMarkAfk, sizeof(szPanelMarkAfk), "%T", "PANEL_MARK_AFK", iClient);
 
     int iPlayers[4][MAXPLAYERS + 1];
     int iTotalPlayers[4] = {0, ...};
@@ -1325,8 +1333,8 @@ void DrawPanelBodyForTeamReady(Handle hPanel, int iClient)
             GetClientNameFixed(iPlayers[iTeam][iPlayer], szPlayerName, sizeof(szPlayerName), MAXSIZE_SHORT_NAME);
 
             DrawPanelFormatText(hPanel, "%T", "PANEL_BLOCK_ITEM", iClient,
-                IsClientReady(iPlayers[iTeam][iPlayer]) ? sPanelMarkReady : sPanelMarkUnready,
-                IsClientAfk(iPlayers[iTeam][iPlayer]) ? sPanelMarkAfk : "",
+                IsClientReady(iPlayers[iTeam][iPlayer]) ? szPanelMarkReady : szPanelMarkUnready,
+                IsClientAfk(iPlayers[iTeam][iPlayer]) ? szPanelMarkAfk : "",
                 szPlayerName
             );
         }
@@ -1364,8 +1372,8 @@ void DrawPanelBodyForTeamReady(Handle hPanel, int iClient)
                 GetClientNameFixed(iCaster[iPlayer], szPlayerName, sizeof(szPlayerName), MAXSIZE_SHORT_NAME);
 
                 DrawPanelFormatText(hPanel, "%T", "PANEL_BLOCK_ITEM", iClient,
-                    sPanelMarkReady,
-                    IsClientAfk(iCaster[iPlayer]) ? sPanelMarkAfk : "",
+                    szPanelMarkReady,
+                    IsClientAfk(iCaster[iPlayer]) ? szPanelMarkAfk : "",
                     szPlayerName
                 );
             }
@@ -1376,11 +1384,11 @@ void DrawPanelBodyForTeamReady(Handle hPanel, int iClient)
 /**
  *
  */
-bool DrawPanelFormatText(Handle hPanel, const char[] sText, any ...)
+bool DrawPanelFormatText(Handle hPanel, const char[] szText, any ...)
 {
-    char sFormatText[128];
-    VFormat(sFormatText, sizeof(sFormatText), sText, 3);
-    return DrawPanelText(hPanel, sFormatText);
+    char szFormatText[128];
+    VFormat(szFormatText, sizeof(szFormatText), szText, 3);
+    return DrawPanelText(hPanel, szFormatText);
 }
 
 /**
