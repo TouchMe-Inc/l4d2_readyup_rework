@@ -589,18 +589,9 @@ public Action L4D_OnFirstSurvivorLeftSafeArea(int iClient)
     if (IsReadyStateInProgress())
     {
         ReturnClientToSaferoom(iClient);
+        CreateTimer(0.1, Timer_DisableGameplayTimers, .flags = TIMER_FLAG_NO_MAPCHANGE);
 
         return Plugin_Handled;
-    }
-
-    if (L4D2_IsScavengeMode())
-    {
-        SetScavengeRoundSetupTimer(Enable);
-        ResetAccumulatedTime();
-    }
-    else
-    {
-        SetVersusForceStartTime(Enable);
     }
 
     SetConVarStringSilence(g_cvGod, CVAR_DISABLE);
@@ -746,7 +737,7 @@ Action Timer_AutoStart(Handle hTimer)
  *
  */
 void Event_GameInstructorDraw(Event event, const char[] szName, bool bDontBroadcast) {
-    CreateTimer(1.0, Timer_DisableGameplayTimers, .flags = TIMER_FLAG_NO_MAPCHANGE);
+    CreateTimer(0.1, Timer_DisableGameplayTimers, .flags = TIMER_FLAG_NO_MAPCHANGE);
 }
 
 /**
