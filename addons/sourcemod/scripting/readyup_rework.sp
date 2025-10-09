@@ -164,6 +164,8 @@ int g_iMaxAttempts = 0;
 float g_fClientCommandSpamCooldown[MAXPLAYERS + 1];
 int g_iClientCommandSpamAttempts[MAXPLAYERS + 1];
 
+bool g_bForceStarted = false;
+
 bool g_bCasterAvailable = false; /**< Caster System */
 
 ReadyupState g_eReadyupState = ReadyupState_None;
@@ -648,6 +650,8 @@ void InitReadyup()
 
         default: SetReadyState(ReadyupState_UnReady);
     }
+
+    g_bForceStarted = false;
 }
 
 /**
@@ -774,6 +778,10 @@ Action Event_PlayerTeam(Event event, const char[] szName, bool bDontBroadcast)
     int iClient = GetClientOfUserId(GetEventInt(event, "userid"));
 
     if (!iClient || IsFakeClient(iClient)) {
+        return Plugin_Continue;
+    }
+
+    if (g_bForceStarted) {
         return Plugin_Continue;
     }
 
@@ -930,7 +938,7 @@ Action Cmd_Ready(int iClient, int iArgs)
         return Plugin_Handled;
     }
 
-    if (IsClientReady(iClient)) {
+    if (IsClientReady(iClient) || g_bForceStarted) {
         return Plugin_Handled;
     }
 
@@ -991,7 +999,7 @@ Action Cmd_Unready(int iClient, int iArgs)
         return Plugin_Handled;
     }
 
-    if (!IsClientReady(iClient)) {
+    if (!IsClientReady(iClient) || g_bForceStarted) {
         return Plugin_Handled;
     }
 
@@ -1068,6 +1076,8 @@ Action Cmd_ForceStart(int iClient, int args)
         CPrintToChat(iPlayer, "%T%T", "TAG", iPlayer, "FORCE_START_BY_ADMIN", iPlayer, szPlayerName);
     }
 
+    g_bForceStarted = true;
+
     return Plugin_Handled;
 }
 
@@ -1088,13 +1098,13 @@ Action Vote_Callback(int iClient, const char[] sCmd, int iArgs)
         return Plugin_Continue;
     }
 
-    char sArg[8]; GetCmdArg(1, sArg, sizeof(sArg));
+    char szArg[8]; GetCmdArg(1, szArg, sizeof(szArg));
 
-    if (strcmp(sArg, "Yes", false) == 0) {
+    if (strcmp(szArg, "Yes", false) == 0) {
         Cmd_Ready(iClient, 0);
     }
 
-    else if (strcmp(sArg, "No", false) == 0) {
+    else if (strcmp(szArg, "No", false) == 0) {
         Cmd_Unready(iClient, 0);
     }
 
@@ -1152,7 +1162,7 @@ Panel BuildPanel(int iClient)
 
     if (iHeaderSize > 0)
     {
-        char sHeader[64];
+        char szHeader[64];
 
         for (int iIndex = 0; iIndex < iHeaderSize; iIndex ++)
         {
@@ -1160,8 +1170,8 @@ Panel BuildPanel(int iClient)
                 continue;
             }
 
-            GetArrayString(g_hPanelHeader, iIndex, sHeader, sizeof(sHeader));
-            DrawPanelText(hPanel, sHeader);
+            GetArrayString(g_hPanelHeader, iIndex, szHeader, sizeof(szHeader));
+            DrawPanelText(hPanel, szHeader);
         }
 
         DrawPanelSpace(hPanel);
@@ -1191,7 +1201,7 @@ Panel BuildPanel(int iClient)
     {
         DrawPanelSpace(hPanel);
 
-        char sFooter[64];
+        char szFooter[64];
 
         for (int iIndex = 0; iIndex < iFooterSize; iIndex ++)
         {
@@ -1199,8 +1209,8 @@ Panel BuildPanel(int iClient)
                 continue;
             }
 
-            GetArrayString(g_hPanelFooter, iIndex, sFooter, sizeof(sFooter));
-            DrawPanelText(hPanel, sFooter);
+            GetArrayString(g_hPanelFooter, iIndex, szFooter, sizeof(szFooter));
+            DrawPanelText(hPanel, szFooter);
         }
     }
 
@@ -1239,7 +1249,7 @@ void DrawPanelBodyForPlayerReady(Handle hPanel, int iClient)
     char szPanelMarkUnready[8]; FormatEx(szPanelMarkUnready, sizeof(szPanelMarkUnready), "%T", "PANEL_MARK_UNREADY", iClient);
     char szPanelMarkAfk[16]; FormatEx(szPanelMarkAfk, sizeof(szPanelMarkAfk), "%T", "PANEL_MARK_AFK", iClient);
     char sSurvivorTeam[64]; FormatEx(sSurvivorTeam, sizeof(sSurvivorTeam), "%T", "PANEL_SURVIVOR_TEAM", iClient);
-    char sInfectedTeam[64]; FormatEx(sInfectedTeam, sizeof(sInfectedTeam), "%T", "PANEL_INFECTED_TEAM", iClient);
+    char szInfectedTeam[64]; FormatEx(szInfectedTeam, sizeof(szInfectedTeam), "%T", "PANEL_INFECTED_TEAM", iClient);
 
     bool bSurvivorAfk = false;
     bool bInfectedAfk = false;
@@ -1268,7 +1278,7 @@ void DrawPanelBodyForPlayerReady(Handle hPanel, int iClient)
     DrawPanelFormatText(hPanel, "%T", "PANEL_BLOCK_ITEM", iClient,
         IsTeamReady(TEAM_INFECTED) ? szPanelMarkReady : szPanelMarkUnready,
         bInfectedAfk ? szPanelMarkAfk : "",
-        sInfectedTeam
+        szInfectedTeam
     );
 }
 
@@ -1356,7 +1366,7 @@ void DrawPanelBodyForTeamReady(Handle hPanel, int iClient)
             DrawPanelSpace(hPanel);
             FormatEx(szBlockName, sizeof(szBlockName), "%T", PANEL_BLOCK_NAME[iBlock], iClient);
 
-            DrawPanelFormatText(hPanel, "%T", "PANEL_BLOCK_TEAM_SHORT", iClient, iBlock + 1, szBlockName);
+            DrawPanelFormatText(hPanel, "%T", "PANEL_BLOCK_TEAM", iClient, iBlock + 1, szBlockName);
 
             for (int iPlayer = 0; iPlayer < iTotalCasters; iPlayer ++)
             {
