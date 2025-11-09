@@ -83,12 +83,6 @@ enum ReadyupState
     ReadyupState_Ready
 }
 
-enum ReadtupEffect // TODO
-{
-    ReadtupEffect_Invulnerability = (1 << 0),
-    ReadtupEffect_InfinityAmmo = (1 << 1)
-}
-
 enum Switcher
 {
     Enable,
@@ -118,7 +112,7 @@ ConVar
     g_cvTeamSize = null,
 
     g_cvReadyupMode = null,
-    g_cvReadyupEffect = null,
+    g_cvStrict = null,
     g_cvDelay = null,
     g_cvAutoStartDelay = null,
     g_cvAfkDuration = null,
@@ -138,6 +132,8 @@ char
     g_sCountdownSound[PLATFORM_MAX_PATH],
     g_sLiveSound[PLATFORM_MAX_PATH]
 ;
+
+bool g_bStrict = false;
 
 int
     g_iStartDelay = 0,
@@ -427,25 +423,26 @@ public void OnPluginStart()
     g_cvScavengeRoundSetupTime = FindConVar("scavenge_round_setup_time");
     g_cvTeamSize = FindConVar("survivor_limit");
 
-    g_cvSoundEnable = CreateConVar("sm_readyup_sound_enable", "1", "Enable sounds played to clients", _, true, 0.0, true, 1.0);
-    g_cvSoundNotify = CreateConVar("sm_readyup_sound_notify", DEFAULT_NOTIFY_SOUND, "Path to the sound that is played when the client status changes");
+    g_cvSoundEnable    = CreateConVar("sm_readyup_sound_enable", "1", "Enable sounds played to clients", _, true, 0.0, true, 1.0);
+    g_cvSoundNotify    = CreateConVar("sm_readyup_sound_notify", DEFAULT_NOTIFY_SOUND, "Path to the sound that is played when the client status changes");
     g_cvSoundCountdown = CreateConVar("sm_readyup_sound_countdown", DEFAULT_COUNTDOWN_SOUND, "The sound that plays when a round goes on countdown");
-    g_cvSoundLive = CreateConVar("sm_readyup_sound_live", DEFAULT_LIVE_SOUND, "The sound that plays when a round goes live");
+    g_cvSoundLive      = CreateConVar("sm_readyup_sound_live", DEFAULT_LIVE_SOUND, "The sound that plays when a round goes live");
 
-    g_cvReadyupMode = CreateConVar("sm_readyup_mode", "2", "Plugin operating mode (Values: 0 = Disabled, 1 = Auto start, 2 = Player ready, 3 = Team ready)", _, true, 0.0, true, 3.0);
-    g_cvReadyupEffect = CreateConVar("sm_readyup_effect", "3", "Values: 0 = Disabled, 1 = ?, 2 = ?, 3 = ?", _, true, 0.0, true, 3.0);
-    g_cvDelay = CreateConVar("sm_readyup_delay", "3", "Number of seconds to count down before the round goes live", _, true, 0.0);
+    g_cvReadyupMode    = CreateConVar("sm_readyup_mode", "2", "Plugin operating mode (Values: 0 = Disabled, 1 = Auto start, 2 = Player ready, 3 = Team ready)", _, true, 0.0, true, 3.0);
+    g_cvStrict         = CreateConVar("sm_readyup_strict", "0", "Team with strict mode (Values: 0 = Disabled, 1 = Enabled)", _, true, 0.0, true, 1.0);
+    g_cvDelay          = CreateConVar("sm_readyup_delay", "3", "Number of seconds to count down before the round goes live", _, true, 0.0);
     g_cvAutoStartDelay = CreateConVar("sm_readyup_autostart_delay", "20.0", "Number of seconds before forced automatic start (only sm_readyup_mode 1)", _, true, 0.0);
-    g_cvAfkDuration = CreateConVar("sm_readyup_afk_duration", "15.0", "Number of seconds since the player's last activity to count his afk", _, true, 1.0);
+    g_cvAfkDuration    = CreateConVar("sm_readyup_afk_duration", "15.0", "Number of seconds since the player's last activity to count his afk", _, true, 1.0);
 
     g_cvSpamCooldownInitial = CreateConVar("sm_readyup_spam_cd_init", "2.0", "Initial cooldown time in seconds", _, true, 0.0);
     g_cvSpamCooldownIncrement = CreateConVar("sm_readyup_spam_cd_inc", "1.0", "Cooldown increment time in seconds", _, true,  0.0);
-    g_cvMaxAttemptsBeforeIncrement = CreateConVar("sm_readyup_spam_attempts_before_inc", "1", "Maximum number of attempts before increasing cooldown", _, true, 10.0);
+    g_cvMaxAttemptsBeforeIncrement = CreateConVar("sm_readyup_spam_attempts_before_inc", "2", "Maximum number of attempts before increasing cooldown", _, true, 10.0);
 
     /*
      * Register ConVar change callbacks.
      */
     HookConVarChange(g_cvReadyupMode, OnModeChanged);
+    HookConVarChange(g_cvStrict, OnStrictChanged);
     HookConVarChange(g_cvDelay, OnDelayChanged);
     HookConVarChange(g_cvAutoStartDelay, OnAutoStartDelayChanged);
     HookConVarChange(g_cvAfkDuration, OnAfkDurationChanged);
@@ -478,10 +475,11 @@ public void OnPluginStart()
     /*
      * Initialize variables with ConVar values.
      */
-    g_eReadyupMode = view_as<ReadyupMode>(GetConVarInt(g_cvReadyupMode));
-    g_iStartDelay = GetConVarInt(g_cvDelay);
+    g_eReadyupMode    = view_as<ReadyupMode>(GetConVarInt(g_cvReadyupMode));
+    g_bStrict         = GetConVarBool(g_cvStrict);
+    g_iStartDelay     = GetConVarInt(g_cvDelay);
     g_iAutoStartDelay = GetConVarInt(g_cvAutoStartDelay);
-    g_fAfkDuration = GetConVarFloat(g_cvAfkDuration);
+    g_fAfkDuration    = GetConVarFloat(g_cvAfkDuration);
 
     g_fSpamCooldownInitial = GetConVarFloat(g_cvSpamCooldownInitial);
     g_fSpamCooldownIncrement = GetConVarFloat(g_cvSpamCooldownIncrement);
@@ -539,6 +537,13 @@ Action Timer_OnModeChanged(Handle hTimer)
 {
     InitReadyup();
     return Plugin_Stop;
+}
+
+/**
+ *
+ */
+void OnStrictChanged(ConVar cv, const char[] szOldValue, const char[] szNewValue) {
+    g_bStrict = GetConVarBool(cv);
 }
 
 /**
@@ -920,15 +925,15 @@ Action Cmd_ReturnToSaferoom(int iClient, int iArgs)
  */
 Action Cmd_Ready(int iClient, int iArgs)
 {
+    if (!iClient || !IsClientInGame(iClient)) {
+        return Plugin_Continue;
+    }
+
     if (!IsModeNeedClientAction() || !IsReadyStateInProgress()) {
         return Plugin_Continue;
     }
 
     if (NeedWaitLoadingPlayers(g_iPlayerLoading)) {
-        return Plugin_Continue;
-    }
-
-    if (!iClient || !IsClientInGame(iClient)) {
         return Plugin_Continue;
     }
 
@@ -959,8 +964,11 @@ Action Cmd_Ready(int iClient, int iArgs)
 
     PlayNotifySound(iClient);
 
-    if (IsReadyupMode(ReadyupMode_PlayerReady)) {
-        SetTeamReady(iTeam, true);
+    if (IsReadyupMode(ReadyupMode_PlayerReady))
+    {
+        if (!SetTeamReady(iTeam, true)) {
+            SetTeamReady(iTeam, false);
+        }
     } else {
         SetClientReady(iClient, true);
     }
@@ -981,15 +989,15 @@ Action Cmd_Ready(int iClient, int iArgs)
  */
 Action Cmd_Unready(int iClient, int iArgs)
 {
+    if (!iClient || !IsClientInGame(iClient)) {
+        return Plugin_Continue;
+    }
+
     if (!IsModeNeedClientAction() || !IsReadyStateInProgress()) {
         return Plugin_Continue;
     }
 
     if (NeedWaitLoadingPlayers(g_iPlayerLoading)) {
-        return Plugin_Continue;
-    }
-
-    if (!iClient || !IsClientInGame(iClient)) {
         return Plugin_Continue;
     }
 
@@ -1331,13 +1339,34 @@ void DrawPanelBodyForTeamReady(Handle hPanel, int iClient)
 
         for (int iPlayer = 0; iPlayer < iTotalPlayers[iTeam]; iPlayer ++)
         {
-            GetClientNameFixed(iPlayers[iTeam][iPlayer], szPlayerName, sizeof(szPlayerName), MAXSIZE_SHORT_NAME);
+            GetClientNameFixed(iPlayers[iTeam][iPlayer], szPlayerName, sizeof szPlayerName, MAXSIZE_SHORT_NAME);
 
             DrawPanelFormatText(hPanel, "%T", "PANEL_BLOCK_ITEM", iClient,
                 IsClientReady(iPlayers[iTeam][iPlayer]) ? szPanelMarkReady : szPanelMarkUnready,
                 IsClientAfk(iPlayers[iTeam][iPlayer]) ? szPanelMarkAfk : "",
                 szPlayerName
             );
+        }
+
+        if (g_bStrict)
+        {
+            int iTeamSize = g_cvTeamSize.IntValue;
+            int iDots = GetTime() % 4;
+            Format(szPlayerName, sizeof szPlayerName, "%s",
+                iDots == 0 ? "▪" :
+                iDots == 1 ? "▫▪" :
+                iDots == 2 ? "▫▫▪" :
+                ""
+            );
+
+            for (int iPlayer = iTotalPlayers[iTeam]; iPlayer < iTeamSize; iPlayer ++)
+            {
+                DrawPanelFormatText(hPanel, "%T", "PANEL_BLOCK_ITEM", iClient,
+                    szPanelMarkUnready,
+                    "",
+                    szPlayerName
+                );
+            }
         }
 
         if (!iBlock) {
@@ -1364,7 +1393,7 @@ void DrawPanelBodyForTeamReady(Handle hPanel, int iClient)
         if (iTotalCasters > 0)
         {
             DrawPanelSpace(hPanel);
-            FormatEx(szBlockName, sizeof(szBlockName), "%T", PANEL_BLOCK_NAME[iBlock], iClient);
+            FormatEx(szBlockName, sizeof szBlockName, "%T", PANEL_BLOCK_NAME[iBlock], iClient);
 
             DrawPanelFormatText(hPanel, "%T", "PANEL_BLOCK_TEAM", iClient, iBlock + 1, szBlockName);
 
@@ -1446,6 +1475,8 @@ bool IsValidTeam(int iTeam) {
  */
 bool IsTeamReady(int iTeam)
 {
+    int iReadyCount = 0;
+
     for (int iClient = 1; iClient <= MaxClients; iClient++)
     {
         if (!IsClientInGame(iClient)
@@ -1457,6 +1488,12 @@ bool IsTeamReady(int iTeam)
         if (!IsClientReady(iClient)) {
             return false;
         }
+
+        iReadyCount ++;
+    }
+
+    if (g_bStrict && iReadyCount < g_cvTeamSize.IntValue) {
+        return false;
     }
 
     return true;
@@ -1465,8 +1502,10 @@ bool IsTeamReady(int iTeam)
 /**
  *
  */
-void SetTeamReady(int iTeam, bool bReady)
+bool SetTeamReady(int iTeam, bool bReady)
 {
+    int iChangeCount = 0;
+
     for (int iClient = 1; iClient <= MaxClients; iClient++)
     {
         if (!IsClientInGame(iClient) || IsFakeClient(iClient) || GetClientTeam(iClient) != iTeam) {
@@ -1474,7 +1513,14 @@ void SetTeamReady(int iTeam, bool bReady)
         }
 
         SetClientReady(iClient, bReady);
+        iChangeCount ++;
     }
+
+    if (g_bStrict && iChangeCount < g_cvTeamSize.IntValue) {
+        return false;
+    }
+
+    return true;
 }
 
 /**

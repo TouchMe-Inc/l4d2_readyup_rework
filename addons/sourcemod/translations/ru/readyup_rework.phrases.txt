@@ -47,12 +47,12 @@
 
     "PANEL_SURVIVOR_TEAM"
     {
-        "ru"             "Survivor team"
+        "ru"             "Выжившие"
     }
 
     "PANEL_INFECTED_TEAM"
     {
-        "ru"             "Infected team"
+        "ru"             "Заражённые"
     }
 
     "PANEL_CASTER_TEAM"
