@@ -689,7 +689,7 @@ Action Timer_UpdatePanel(Handle hTimer)
     for (int iClient = 1; iClient <= MaxClients; iClient ++)
     {
         if (!IsClientInGame(iClient)
-        || IsFakeClient(iClient)
+        || (IsFakeClient(iClient) && !IsClientSourceTV(iClient))
         || !IsClientReadyUpVisible(iClient)) {
             continue;
         }
@@ -796,11 +796,10 @@ Action Event_PlayerTeam(Event event, const char[] szName, bool bDontBroadcast)
     GetClientNameFixed(iClient, szPlayerName, sizeof(szPlayerName), MAXSIZE_SHORT_NAME);
 
     DataPack hPack = CreateDataPack();
-    WritePackCell(hPack, iClient);
+    CreateDataTimer(0.1, Timer_PlayerTeam, hPack, TIMER_FLAG_NO_MAPCHANGE);
+    WritePackCell(hPack, GetClientUserId(iClient));
     WritePackCell(hPack, iOldTeam);
     WritePackString(hPack, szPlayerName);
-
-    CreateTimer(0.1, Timer_PlayerTeam, hPack, TIMER_DATA_HNDL_CLOSE | TIMER_FLAG_NO_MAPCHANGE);
 
     return Plugin_Continue;
 }
@@ -816,9 +815,9 @@ Action Timer_PlayerTeam(Handle hTimer, DataPack hPack)
 
     ResetPack(hPack);
 
-    int iClient = ReadPackCell(hPack);
+    int iClient = GetClientOfUserId(ReadPackCell(hPack));
     int iOldTeam = ReadPackCell(hPack);
-    int iNewTeam = IsClientConnected(iClient) ? GetClientTeam(iClient) : TEAM_NONE;
+    int iNewTeam = iClient > 0 && IsClientConnected(iClient) ? GetClientTeam(iClient) : TEAM_NONE;
 
     char szPlayerName[MAX_NAME_LENGTH];
     ReadPackString(hPack, szPlayerName, sizeof(szPlayerName));
@@ -1253,12 +1252,6 @@ void DrawPanelBodyForPlayerReady(Handle hPanel, int iClient)
         return;
     }
 
-    char szPanelMarkReady[8]; FormatEx(szPanelMarkReady, sizeof(szPanelMarkReady), "%T", "PANEL_MARK_READY", iClient);
-    char szPanelMarkUnready[8]; FormatEx(szPanelMarkUnready, sizeof(szPanelMarkUnready), "%T", "PANEL_MARK_UNREADY", iClient);
-    char szPanelMarkAfk[16]; FormatEx(szPanelMarkAfk, sizeof(szPanelMarkAfk), "%T", "PANEL_MARK_AFK", iClient);
-    char sSurvivorTeam[64]; FormatEx(sSurvivorTeam, sizeof(sSurvivorTeam), "%T", "PANEL_SURVIVOR_TEAM", iClient);
-    char szInfectedTeam[64]; FormatEx(szInfectedTeam, sizeof(szInfectedTeam), "%T", "PANEL_INFECTED_TEAM", iClient);
-
     bool bSurvivorAfk = false;
     bool bInfectedAfk = false;
 
@@ -1276,6 +1269,12 @@ void DrawPanelBodyForPlayerReady(Handle hPanel, int iClient)
             bInfectedAfk = true;
         }
     }
+
+    char szPanelMarkReady[8]; FormatEx(szPanelMarkReady, sizeof(szPanelMarkReady), "%T", "PANEL_MARK_READY", iClient);
+    char szPanelMarkUnready[8]; FormatEx(szPanelMarkUnready, sizeof(szPanelMarkUnready), "%T", "PANEL_MARK_UNREADY", iClient);
+    char szPanelMarkAfk[16]; FormatEx(szPanelMarkAfk, sizeof(szPanelMarkAfk), "%T", "PANEL_MARK_AFK", iClient);
+    char sSurvivorTeam[64]; FormatEx(sSurvivorTeam, sizeof(sSurvivorTeam), "%T", "PANEL_SURVIVOR_TEAM", iClient);
+    char szInfectedTeam[64]; FormatEx(szInfectedTeam, sizeof(szInfectedTeam), "%T", "PANEL_INFECTED_TEAM", iClient);
 
     DrawPanelFormatText(hPanel, "%T", "PANEL_BLOCK_ITEM", iClient,
         IsTeamReady(TEAM_SURVIVOR) ? szPanelMarkReady : szPanelMarkUnready,
