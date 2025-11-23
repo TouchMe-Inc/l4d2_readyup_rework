@@ -47,17 +47,17 @@
 
     "PANEL_SURVIVOR_TEAM"
     {
-        "en"            "Survivor team"
+        "en"            "Survivors"
     }
 
     "PANEL_INFECTED_TEAM"
     {
-        "en"            "Infected team"
+        "en"            "Infected"
     }
 
     "PANEL_CASTER_TEAM"
     {
-        "en"            "Caster team"
+        "en"            "Caster"
     }
 
     "PANEL_MARK_READY"

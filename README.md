@@ -16,6 +16,7 @@ The plugin allows you to control the moment the round starts.
 | sm_readyup_sound_countdown | "weapons/hegrenade/beep.wav" | The sound that plays when a round goes on countdown                        |
 | sm_readyup_sound_live | "ui/survival_medal.wav" | The sound that plays when a round goes live                                          |
 | sm_readyup_mode      | 2             | Plugin operating mode (Values: 0 = Disabled, 1 = Auto start, 2 = Player ready, 3 = Team ready)  |
+| sm_readyup_strict    | 0             | Team with strict mode (Values: 0 = Disabled, 1 = Enabled)                                       |
 | sm_readyup_delay     | 3             | Number of seconds to count down before the round goes live                                      |
 | sm_readyup_autostart_delay | 20.0    | Number of seconds before forced automatic start (only `sm_readyup_mode 1`)                      |
 | sm_readyup_afk_duration | 15.0       | Number of seconds since the player's last activity to count his afk                             |
@@ -24,10 +25,7 @@ The plugin allows you to control the moment the round starts.
 | sm_readyup_spam_attempts_before_inc | 1 | Maximum number of attempts before increasing cooldown                                                               |
 
 ## Developers
-In the repository you can find the file [addons/sourcemod/scripting/include/readyup_rework.inc](https://github.com/TouchMe-Inc/l4d2_readyup_rework/blob/main/addons/sourcemod/scripting/include/readyup_rework.inc) , which contains the plugin API. 
-At the moment I have not prepared a description :c
-
-Coming soon...
+In the repository you can find the file [addons/sourcemod/scripting/include/readyup_rework.inc](https://github.com/TouchMe-Inc/l4d2_readyup_rework/blob/main/addons/sourcemod/scripting/include/readyup_rework.inc) , which contains the plugin API.
 
 ## Require
 * Colors

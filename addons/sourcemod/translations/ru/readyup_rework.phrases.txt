@@ -57,7 +57,7 @@
 
     "PANEL_CASTER_TEAM"
     {
-        "ru"             "Caster team"
+        "ru"             "Caster"
     }
 
     "PANEL_MARK_READY"
