@@ -24,53 +24,24 @@ public Plugin myinfo =
 
 int g_iThisIndex = -1;
 
-bool g_bReadyUpAvailable = false;
-
 
 /**
   * Global event. Called when all plugins loaded.
   */
 public void OnAllPluginsLoaded()
 {
-    g_bReadyUpAvailable = LibraryExists(LIB_READY);
-
-    if (g_bReadyUpAvailable) {
+    if (LibraryExists(LIB_READY)) {
         g_iThisIndex = PushReadyUpItem(PanelPos_Footer, "OnPrepareReadyUpItem");
     }
 }
 
-/**
-  * Global event. Called when a library is removed.
-  *
-  * @param sName     Library name
-  */
-public void OnLibraryRemoved(const char[] sName)
-{
-    if (StrEqual(sName, LIB_READY)) {
-        g_bReadyUpAvailable = false;
-    }
-}
-
-/**
-  * Global event. Called when a library is added.
-  *
-  * @param sName     Library name
-  */
-public void OnLibraryAdded(const char[] sName)
-{
-    if (StrEqual(sName, LIB_READY)) {
-        g_bReadyUpAvailable = true;
-    }
-}
-
-public void OnPluginStart()
-{
+public void OnPluginStart() {
     LoadTranslations(TRANSLATIONS);
 }
 
 public Action OnPrepareReadyUpItem(PanelPos ePos, int iClient, int iIndex)
 {
-    if (!g_bReadyUpAvailable || ePos != PanelPos_Footer || g_iThisIndex != iIndex) {
+    if (ePos != PanelPos_Footer || g_iThisIndex != iIndex) {
         return Plugin_Continue;
     }
 
