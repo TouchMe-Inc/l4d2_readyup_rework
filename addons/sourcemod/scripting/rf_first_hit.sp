@@ -6,13 +6,12 @@
 #include <colors>
 
 
-public Plugin myinfo =
-{
-    name = "[ReadyupFooter] FirstHit",
-    author = "TouchMe",
+public Plugin myinfo = {
+    name        = "[ReadyupFooter] FirstHit",
+    author      = "TouchMe",
     description = "N/a",
-    version = "build0000",
-    url = "https://github.com/TouchMe-Inc/l4d2_readyup_rework"
+    version     = "build0000",
+    url         = "https://github.com/TouchMe-Inc/l4d2_readyup_rework"
 }
 
 
@@ -32,20 +31,18 @@ public Plugin myinfo =
  */
 #define LIB_READY               "readyup_rework"
 
-#define TRANSLATIONS            "rf_boss_flow.phrases"
+#define TRANSLATIONS            "rf_first_hit.phrases"
 
 
-char g_sClass[][] =
+char g_szClassKey[][] =
 {
     "",
-    "Smoker",
-    "(Boomer)",
-    "Hunter",
-    "(Spitter)",
-    "Jockey",
-    "Charger",
-    "",
-    ""
+    "SMOKER",
+    "BOOMER",
+    "HUNTER",
+    "SPITTER",
+    "JOCKEY",
+    "CHARGER"
 };
 
 int g_iThisIndex = -1;
@@ -93,17 +90,17 @@ public Action OnPrepareReadyUpItem(PanelPos ePos, int iClient, int iIndex)
         return Plugin_Continue;
     }
 
-    char sBuffer[64];
+    char szBuffer[64];
 
     for (int iItem = 0; iItem < iArraySize; iItem ++)
     {
         int iZombieClass = GetArrayCell(hSpawnOrder, iItem);
-        Format(sBuffer, sizeof(sBuffer), "%s%s%s", sBuffer, g_sClass[iZombieClass], iItem != (iArraySize - 1) ? ", " : "");
+        Format(szBuffer, sizeof szBuffer, "%s%T%s", szBuffer, g_szClassKey[iZombieClass], iClient, iItem != (iArraySize - 1) ? ", " : "");
     }
 
     CloseHandle(hSpawnOrder);
 
-    UpdateReadyUpItem(ePos, iIndex, "SI: %s", sBuffer);
+    UpdateReadyUpItem(ePos, iIndex, "%T", "FIRST_HIT", iClient, szBuffer);
 
     return Plugin_Stop;
 }
