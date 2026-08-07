@@ -401,6 +401,14 @@ public void OnMapStart()
     PrecacheSound(g_szLiveSound);
 }
 
+public void OnMapEnd()
+{
+	if (IsReadyStateInProgress())
+	{
+		g_eReadyupState = ReadyupState_None;
+	}
+}
+
 /**
  *
  */
@@ -502,7 +510,6 @@ public void OnPluginEnd()
     }
 
     SetVersusForceStartTime(Enable);
-    ReturnSurvivorToSaferoom();
 }
 
 /**
@@ -589,21 +596,21 @@ void OnMaxAttemptsBeforeIncementChanged(ConVar cv, const char[] szOldValue, cons
  */
 public Action L4D_OnFirstSurvivorLeftSafeArea(int iClient)
 {
-    if (IsReadyStateInProgress())
+    if (!IsReadyStateInProgress())
     {
-        ReturnClientToSaferoom(iClient);
-        CreateTimer(0.1, Timer_DisableGameplayTimers, .flags = TIMER_FLAG_NO_MAPCHANGE);
+        SetConVarStringSilence(g_cvGod, CVAR_DISABLE);
+        SetConVarStringSilence(g_cvInfinitePrimaryAmmo, CVAR_DISABLE);
+        SetConVarStringSilence(g_cvPlayerStop, CVAR_DISABLE);
 
-        return Plugin_Handled;
+        SetReadyState(ReadyupState_None);
+
+        return Plugin_Continue;
     }
 
-    SetConVarStringSilence(g_cvGod, CVAR_DISABLE);
-    SetConVarStringSilence(g_cvInfinitePrimaryAmmo, CVAR_DISABLE);
-    SetConVarStringSilence(g_cvPlayerStop, CVAR_DISABLE);
+    ReturnClientToSaferoom(iClient);
+    CreateTimer(0.1, Timer_DisableGameplayTimers, .flags = TIMER_FLAG_NO_MAPCHANGE);
 
-    SetReadyState(ReadyupState_None);
-
-    return Plugin_Continue;
+    return Plugin_Handled;
 }
 
 /**

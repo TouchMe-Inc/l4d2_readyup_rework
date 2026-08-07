@@ -1,0 +1,12 @@
+"Phrases"
+{
+    "MARK_UNREADY"
+    {
+        "en"			" \n!ur / [F2]  =  unready"
+    }
+
+    "MARK_READY"
+    {
+        "en"			" \n!r / [F1]  =  ready"
+    }
+}

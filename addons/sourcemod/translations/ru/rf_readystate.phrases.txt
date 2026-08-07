@@ -1,0 +1,12 @@
+"Phrases"
+{
+    "MARK_UNREADY"
+    {
+        "ru"			" \n!ur / [F2]  =  не готов"
+    }
+
+    "MARK_READY"
+    {
+        "ru"			" \n!r / [F1]  =  готов"
+    }
+}
