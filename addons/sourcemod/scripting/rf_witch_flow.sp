@@ -9,10 +9,10 @@
 
 public Plugin myinfo =
 {
-    name        = "[ReadyupFooter] WitchFlow",
+    name        = "[Readyup] ReadyupFooter.WitchFlow",
     author      = "TouchMe",
     description = "Adds witch percentages to the bottom of ReadyUp",
-    version     = "build0001",
+    version     = "build0002",
     url         = "https://github.com/TouchMe-Inc/l4d2_readyup_rework"
 }
 
@@ -45,29 +45,27 @@ public Action OnPrepareReadyUpItem(PanelPos ePos, int iClient, int iIndex)
         return Plugin_Continue;
     }
 
+    if (!IsBossSpawnAllowed(Boss_Witch)) {
+        return Plugin_Continue;
+    }
+
     char szWitchPercent[32];
 
+    int iWitchPercent = GetBossFlow(Boss_Witch);
 
-    if (IsBossSpawnAllowed(Boss_Witch))
-    {
-        int iWitchPercent = GetBossFlow(Boss_Witch);
-
-        if (IsMapWithStaticBossSpawn(Boss_Witch)) {
-            FormatEx(szWitchPercent, sizeof(szWitchPercent), "%T", "STATIC", iClient);
-        }
-
-        else if (iWitchPercent == 0) {
-            FormatEx(szWitchPercent, sizeof(szWitchPercent), "%T", "DISABLE", iClient);
-        }
-
-        else {
-            FormatEx(szWitchPercent, sizeof(szWitchPercent), "%T", "PERCENT", iClient, iWitchPercent);
-        }
+    if (IsMapWithStaticBossSpawn(Boss_Witch)) {
+        FormatEx(szWitchPercent, sizeof(szWitchPercent), "%T", "STATIC", iClient);
     }
 
-    if (szWitchPercent[0] != '\0') {
-        UpdateReadyUpItem(ePos, iIndex, "%T", "WITCH_FLOW", iClient, szWitchPercent);
+    else if (iWitchPercent == 0) {
+        FormatEx(szWitchPercent, sizeof(szWitchPercent), "%T", "DISABLE", iClient);
     }
+
+    else {
+        FormatEx(szWitchPercent, sizeof(szWitchPercent), "%T", "PERCENT", iClient, iWitchPercent);
+    }
+
+    UpdateReadyUpItem(ePos, iIndex, "%T", "WITCH_FLOW", iClient, szWitchPercent);
 
     return Plugin_Stop;
 }

@@ -9,10 +9,10 @@
 
 
 public Plugin myinfo = {
-    name        = "[ReadyupFooter] TankFlow",
+    name        = "[Readyup] ReadyupFooter.TankFlow",
     author      = "TouchMe",
     description = "Adds tank percentages to the bottom of ReadyUp",
-    version     = "build0001",
+    version     = "build0002",
     url         = "https://github.com/TouchMe-Inc/l4d2_readyup_rework"
 }
 
@@ -50,37 +50,36 @@ public Action OnPrepareReadyUpItem(PanelPos ePos, int iClient, int iIndex)
         return Plugin_Continue;
     }
 
+    if (!IsBossSpawnAllowed(Boss_Tank)) {
+        return Plugin_Continue;
+    }
+
     char szTankPercent[32];
 
-    if (IsBossSpawnAllowed(Boss_Tank))
+    int iTankFlow = GetBossFlow(Boss_Tank);
+
+    if (IsMapWithStaticBossSpawn(Boss_Tank)) {
+        FormatEx(szTankPercent, sizeof szTankPercent, "%T", "STATIC", iClient);
+    }
+
+    else if (iTankFlow == 0) {
+        FormatEx(szTankPercent, sizeof szTankPercent, "%T", "DISABLE", iClient);
+    }
+
+    else
     {
-        int iTankFlow = GetBossFlow(Boss_Tank);
+        float fBossBuffer = GetConVarFloat(g_cvVsBossBuffer) / L4D2Direct_GetMapMaxFlowDistance();
 
-        if (IsMapWithStaticBossSpawn(Boss_Tank)) {
-            FormatEx(szTankPercent, sizeof szTankPercent, "%T", "STATIC", iClient);
+        int iTankFlowTrigger = iTankFlow - RoundToNearest(fBossBuffer * 100.0);
+
+        if (iTankFlowTrigger < 0) {
+            iTankFlowTrigger = 1;
         }
 
-        else if (iTankFlow == 0) {
-            FormatEx(szTankPercent, sizeof szTankPercent, "%T", "DISABLE", iClient);
-        }
-
-        else
-        {
-            float fBossBuffer = GetConVarFloat(g_cvVsBossBuffer) / L4D2Direct_GetMapMaxFlowDistance();
-
-            int iTankFlowTrigger = iTankFlow - RoundToNearest(fBossBuffer * 100.0);
-
-            if (iTankFlowTrigger < 0) {
-                iTankFlowTrigger = 1;
-            }
-
-            FormatEx(szTankPercent, sizeof szTankPercent, "%T", "PERCENT", iClient, iTankFlow, iTankFlowTrigger);
-        }
+        FormatEx(szTankPercent, sizeof szTankPercent, "%T", "PERCENT", iClient, iTankFlow, iTankFlowTrigger);
     }
 
-    if (szTankPercent[0] != '\0' ) {
-        UpdateReadyUpItem(ePos, iIndex, "%T", "TANK_FLOW", iClient, szTankPercent);
-    }
+    UpdateReadyUpItem(ePos, iIndex, "%T", "TANK_FLOW", iClient, szTankPercent);
 
     return Plugin_Stop;
 }

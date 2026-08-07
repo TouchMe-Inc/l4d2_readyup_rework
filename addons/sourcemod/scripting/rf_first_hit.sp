@@ -7,7 +7,7 @@
 
 
 public Plugin myinfo = {
-    name        = "[ReadyupFooter] FirstHit",
+    name        = "[Readyup] ReadyupFooter.FirstHit",
     author      = "TouchMe",
     description = "N/a",
     version     = "build0000",

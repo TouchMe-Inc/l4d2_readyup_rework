@@ -9,11 +9,11 @@
 
 public Plugin myinfo =
 {
-    name = "[ReadyupHeader] Servername",
-    author = "TouchMe",
+    name        = "[Readyup] ReadyupHeader.Servername",
+    author      = "TouchMe",
     description = "Adds the server name to the top of ReadyUp",
-    version = "build0002",
-    url = "https://github.com/TouchMe-Inc/l4d2_readyup_rework"
+    version     = "build0002",
+    url         = "https://github.com/TouchMe-Inc/l4d2_readyup_rework"
 };
 
 
